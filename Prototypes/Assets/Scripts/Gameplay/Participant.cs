@@ -99,6 +99,7 @@ namespace Gameplay
             charCard.transform.position = position + new Vector3(0,.3f,0);
             var rotation = mySlot.rCCardLocation.rotation;
             charCard.transform.rotation = rotation;
+            charCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
             coinCounter = mySlot.coinCounter;
             AddCoin(tempCard.wealth);
             AddHealth(tempCard.health);
@@ -106,6 +107,7 @@ namespace Gameplay
             GameObject roleCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Role, (int) role);
             roleCard.transform.position = position + new Vector3(.5f,.3f,.5f);
             roleCard.transform.rotation = rotation;
+            roleCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
             if (role == GameMaster.Role.Leader)
             {
                 AddHealth(1);
@@ -117,6 +119,8 @@ namespace Gameplay
                 DrawACard(GameMaster.CardType.Artifact);
                 DrawACard(GameMaster.CardType.Artifact);
             }
+
+            CursorFollower.Instance.playerCam = mySlot.perspective;
         }
 
         public void AddCoin(int amount)
@@ -152,6 +156,7 @@ namespace Gameplay
             int handSize = actionHand.Count + artifactHand.Count;
             newCard.transform.position = mySlot.aACardLocation.position + new Vector3(.2f*handSize,.3f,.2f*handSize);
             newCard.transform.rotation = mySlot.aACardLocation.rotation;
+            newCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
             if (type == GameMaster.CardType.Action)
             {
                 actionHand.Add((GameMaster.Action)newCardIndex);

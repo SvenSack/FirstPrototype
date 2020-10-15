@@ -37,6 +37,26 @@ PrefabInstance:
       propertyPath: m_textInfo.pageCount
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3996187200928833080, guid: b9d48bedf101ef84da47cfb48a4eaaa7,
+        type: 3}
+      propertyPath: m_Size.z
+      value: 0.45460734
+      objectReference: {fileID: 0}
+    - target: {fileID: 3996187200928833080, guid: b9d48bedf101ef84da47cfb48a4eaaa7,
+        type: 3}
+      propertyPath: m_Center.x
+      value: -0.12179173
+      objectReference: {fileID: 0}
+    - target: {fileID: 3996187200928833080, guid: b9d48bedf101ef84da47cfb48a4eaaa7,
+        type: 3}
+      propertyPath: m_Center.z
+      value: -0.012783637
+      objectReference: {fileID: 0}
+    - target: {fileID: 3996187200928833080, guid: b9d48bedf101ef84da47cfb48a4eaaa7,
+        type: 3}
+      propertyPath: m_Size.x
+      value: 0.37025574
+      objectReference: {fileID: 0}
     - target: {fileID: 4257614074986460259, guid: b9d48bedf101ef84da47cfb48a4eaaa7,
         type: 3}
       propertyPath: m_LocalPosition.x

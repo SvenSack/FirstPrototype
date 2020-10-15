@@ -7,6 +7,131 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1083730865338713832, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_Name
+      value: OptionLabel_OO e
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_text
+      value: Pay 2 coins from your Character Pool, add 4 coins to the Job Pool
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 14.45
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_firstOverflowCharacterIndex
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 65
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.spaceCount
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 2162681088755922272, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2764346822471682820, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_Name
+      value: OptionLabel_IF e
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_text
+      value: Pay 4 coins, double the amount of coins in the Job Pool
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 55
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.spaceCount
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088121162998328569, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_firstOverflowCharacterIndex
+      value: 51
+      objectReference: {fileID: 0}
+    - target: {fileID: 4212843262382954970, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_Name
+      value: OptionLabel_SF e
+      objectReference: {fileID: 0}
+    - target: {fileID: 5235018558158165205, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_text
+      value: Add 4 coins to your Job Pool. The Leader gains 2 coins
+      objectReference: {fileID: 0}
+    - target: {fileID: 5235018558158165205, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 15.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5235018558158165205, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 54
+      objectReference: {fileID: 0}
+    - target: {fileID: 5235018558158165205, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.spaceCount
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 5235018558158165205, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 5235018558158165205, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5482138971582284599, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -4.6423
+      objectReference: {fileID: 0}
+    - target: {fileID: 5482138971582284599, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 118.4
+      objectReference: {fileID: 0}
     - target: {fileID: 5487988829416640082, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
       propertyPath: m_Name
@@ -60,7 +185,7 @@ PrefabInstance:
     - target: {fileID: 5487988830438878788, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
       propertyPath: m_Name
-      value: MoC_Board
+      value: MoC_Board Variant
       objectReference: {fileID: 0}
     - target: {fileID: 5487988830438878789, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
@@ -150,7 +275,7 @@ PrefabInstance:
     - target: {fileID: 5487988830560657360, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
       propertyPath: m_fontSize
-      value: 22.85
+      value: 22.55
       objectReference: {fileID: 0}
     - target: {fileID: 5487988830560657360, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
@@ -205,7 +330,7 @@ PrefabInstance:
     - target: {fileID: 5487988830758203520, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
       propertyPath: m_fontSize
-      value: 22.85
+      value: 22.25
       objectReference: {fileID: 0}
     - target: {fileID: 5487988830758203520, guid: 549e3a0c01600004f8505d7ce948cc74,
         type: 3}
@@ -301,6 +426,52 @@ PrefabInstance:
         type: 3}
       propertyPath: m_margin.x
       value: 22.290861
+      objectReference: {fileID: 0}
+    - target: {fileID: 5750616438783031328, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_text
+      value: Move 8 coins from your Job Pool to your Character Pool. The Leader gains
+        2 coins
+      objectReference: {fileID: 0}
+    - target: {fileID: 5750616438783031328, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 14.65
+      objectReference: {fileID: 0}
+    - target: {fileID: 5750616438783031328, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 5750616438783031328, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.spaceCount
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 5750616438783031328, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 5750616438783031328, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6502380822552096449, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -4.76
+      objectReference: {fileID: 0}
+    - target: {fileID: 6502380822552096449, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 59.52
+      objectReference: {fileID: 0}
+    - target: {fileID: 7624886099474399133, guid: 549e3a0c01600004f8505d7ce948cc74,
+        type: 3}
+      propertyPath: m_Name
+      value: OptionLabel_ST e
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 549e3a0c01600004f8505d7ce948cc74, type: 3}

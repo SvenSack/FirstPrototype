@@ -10,13 +10,14 @@ namespace Gameplay
         public bool isUsed;
         [SerializeField] private GameObject nameHover;
         [SerializeField] private GameObject explanationHover;
-        private float hoverTimer = 0;
+        public float hoverTime = 0;
         [SerializeField] private float[] hoverTimes = new float[2];
         public Transform pieceLocation;
         public Participant player;
         public Board board;
         [SerializeField] private GameObject light;
         
+
         private enum TileType
         {
             ThievesGuild,
@@ -48,7 +49,7 @@ namespace Gameplay
 
         private void Start()
         {
-            // explanationHover.SetActive(false);
+            explanationHover.SetActive(false);
             nameHover.SetActive(false);
         }
 
@@ -63,7 +64,9 @@ namespace Gameplay
         private void OrientToCamera()
         {
             nameHover.transform.LookAt(player.mySlot.perspective.transform);
-            // explanationHover.transform.LookAt(player.mySlot.perspective.transform);
+            nameHover.transform.Rotate(Vector3.up, 180);
+            explanationHover.transform.LookAt(player.mySlot.perspective.transform);
+            explanationHover.transform.Rotate(Vector3.up, 180);
         }
         
         private bool PerformTileAction(bool isThug)
@@ -375,6 +378,51 @@ namespace Gameplay
                             break;
                     }
                 }
+            }
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            if (other.CompareTag("CursorFollower"))
+            {
+                hoverTime += Time.deltaTime;
+                CheckHovers();
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("CursorFollower"))
+            {
+                if (CursorFollower.Instance.IsHovering)
+                {
+                    ToggleHover(true);
+                }
+
+                hoverTime = 0;
+            }
+        }
+
+        private void ToggleHover(bool withExplanation)
+        {
+            CursorFollower.Instance.ToggleHover();
+            nameHover.SetActive(CursorFollower.Instance.IsHovering);
+            if (withExplanation)
+            {
+                explanationHover.SetActive(CursorFollower.Instance.IsHovering);
+            }
+        }
+
+        private void CheckHovers()
+        {
+            if (!CursorFollower.Instance.IsHovering && hoverTime >= hoverTimes[0])
+            {
+                ToggleHover(false);
+            }
+
+            if (!explanationHover.activeSelf && hoverTime >= hoverTimes[1])
+            {
+                explanationHover.SetActive(true);
             }
         }
     }

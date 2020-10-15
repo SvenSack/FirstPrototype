@@ -2,11 +2,28 @@
 <project version="4">
   <component name="ContentModelStore">
     <e p="C:\Users\C4\.Rider2019.1\system\extResources" t="IncludeRecursive" />
-    <e p="C:\Users\C4\.Rider2019.1\system\resharper-host\local\Transient\ReSharperHost\v191\SolutionCaches\_Prototypes.-1965996200.00" t="ExcludeRecursive" />
-    <e p="D:\Desktop Files\Studium\Minor Skilled\Design\Prototypes\Prototypes" t="IncludeRecursive">
+    <e p="C:\Users\C4\.Rider2019.1\system\resharper-host\local\Transient\ReSharperHost\v191\SolutionCaches\_Prototypes.-939445468.00" t="ExcludeRecursive" />
+    <e p="D:\Desktop Files\Studium\Minor Skilled\Design\Prototypes\FirstPrototype\Prototypes" t="IncludeRecursive">
       <e p="Assembly-CSharp-Editor.csproj" t="IncludeRecursive" />
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
+        <e p="LeanTween" t="Include">
+          <e p="Editor" t="Include">
+            <e p="LeanTweenDocumentationEditor.cs" t="Include" />
+          </e>
+          <e p="Framework" t="Include">
+            <e p="LeanAudio.cs" t="Include" />
+            <e p="LeanSmooth.cs" t="Include" />
+            <e p="LeanTest.cs" t="Include" />
+            <e p="LeanTween.cs" t="Include" />
+            <e p="LeanTweenExt.cs" t="Include" />
+            <e p="LTDescr.cs" t="Include" />
+            <e p="LTDescrOptional.cs" t="Include" />
+            <e p="LTSeq.cs" t="Include" />
+          </e>
+          <e p="LICENSE.txt" t="Include" />
+          <e p="readme.txt" t="Include" />
+        </e>
         <e p="Photon" t="Include">
           <e p="PhotonChat" t="Include">
             <e p="Code" t="Include">
@@ -182,6 +199,9 @@
           <e p="Gameplay" t="Include">
             <e p="Board.cs" t="Include" />
             <e p="Card.cs" t="Include" />
+            <e p="CardHover.cs" t="Include" />
+            <e p="CoinHover.cs" t="Include" />
+            <e p="CursorFollower.cs" t="Include" />
             <e p="Decklist.cs" t="Include" />
             <e p="GameMaster.cs" t="Include" />
             <e p="Participant.cs" t="Include" />

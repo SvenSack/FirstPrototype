@@ -17,6 +17,7 @@ namespace Gameplay
         public Transform pieceLocation;
         public TextMeshProUGUI coinCounter;
         public Tile[] publicTiles = new Tile[5];
+        public Transform hoverLocation;
 
         private void Awake()
         {

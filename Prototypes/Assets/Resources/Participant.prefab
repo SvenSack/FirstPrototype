@@ -45,10 +45,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pv: {fileID: 0}
+  mySlot: {fileID: 0}
   playerNumber: -1
   character: 0
   role: 0
   coins: 0
+  hasZeal: 0
   coinObject: {fileID: 6887693000311336725, guid: e33e3fcca86522f4d975103c913f91f0,
     type: 3}
   healthObject: {fileID: 3336558165005181983, guid: f4437b598fa5a594b90fa2be3d0db35e,

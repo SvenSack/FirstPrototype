@@ -75,6 +75,7 @@ namespace Gameplay
             GameObject newCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Artifact, newCardIndex);
             newCard.transform.position = pieceLocation.position + new Vector3(.2f*artifactHand.Count,.3f,.2f*artifactHand.Count);
             newCard.transform.rotation = pieceLocation.rotation;
+            newCard.GetComponent<Card>().hoverLocation = jobHolder.mySlot.hoverLocation;
             artifactHand.Add((GameMaster.Artifact)newCardIndex);
         }
     }
