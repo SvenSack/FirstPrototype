@@ -414,7 +414,7 @@ GameObject:
   - component: {fileID: 5487988829381632626}
   - component: {fileID: 3172087351587212842}
   - component: {fileID: 5042249069508517634}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: JobPoolLocation
   m_TagString: Untagged
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
@@ -1018,7 +1018,7 @@ GameObject:
   - component: {fileID: 5487988830363870024}
   - component: {fileID: 5487988830363870022}
   - component: {fileID: 5487988830363870025}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -1160,7 +1160,7 @@ GameObject:
   - component: {fileID: 5487988830407886134}
   - component: {fileID: 5487988830407886132}
   - component: {fileID: 5487988830407886135}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -1331,7 +1331,7 @@ GameObject:
   - component: {fileID: 5487988830528909191}
   - component: {fileID: 5487988830528909189}
   - component: {fileID: 5487988830528909188}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -2194,7 +2194,7 @@ GameObject:
   - component: {fileID: 5487988830719691722}
   - component: {fileID: 5487988830719691720}
   - component: {fileID: 5487988830719691723}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}

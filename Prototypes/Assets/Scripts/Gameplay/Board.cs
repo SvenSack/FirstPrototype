@@ -11,14 +11,12 @@ namespace Gameplay
         public int coins;
         private TextMeshProUGUI coinCounter;
         private List<GameObject> coinObjects = new List<GameObject>();
-        private List<GameMaster.Artifact> artifactHand = new List<GameMaster.Artifact>();
+        private List<Card> artifactHand = new List<Card>();
         public List<GameObject> pieces = new List<GameObject>();
         public PhotonView pv;
         public Participant jobHolder;
 
         [SerializeField] private GameObject coinObject = null;
-    
-        // TODO: make the piece remember its origin point and change tiles code accordingly
     
         public void AddCoin(int amount)
         {
@@ -49,6 +47,8 @@ namespace Gameplay
             newPiece.GetComponent<PhotonView>().TransferOwnership(pv.Controller);
             Piece nPPiece = newPiece.GetComponent<Piece>();
             nPPiece.cam = jobHolder.mySlot.perspective;
+            nPPiece.isPrivate = false;
+            nPPiece.originBoard = this;
             if (setUsed)
             {
                 nPPiece.ToggleUse();
@@ -75,8 +75,10 @@ namespace Gameplay
             GameObject newCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Artifact, newCardIndex);
             newCard.transform.position = pieceLocation.position + new Vector3(.2f*artifactHand.Count,.3f,.2f*artifactHand.Count);
             newCard.transform.rotation = pieceLocation.rotation;
-            newCard.GetComponent<Card>().hoverLocation = jobHolder.mySlot.hoverLocation;
-            artifactHand.Add((GameMaster.Artifact)newCardIndex);
+            Card cardPart = newCard.GetComponent<Card>();
+            cardPart.hoverLocation = jobHolder.mySlot.hoverLocation;
+            cardPart.isPrivate = false;
+            artifactHand.Add(cardPart);
         }
     }
 }

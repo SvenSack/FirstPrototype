@@ -12,7 +12,6 @@ namespace Gameplay
         [SerializeField] private GameObject explanationHover;
         public float hoverTime = 0;
         [SerializeField] private float[] hoverTimes = new float[2];
-        public Transform pieceLocation;
         public Participant player;
         public Board board;
         [SerializeField] private GameObject light;
@@ -74,14 +73,17 @@ namespace Gameplay
             switch (type)
             {
                 case TileType.ThievesGuild:
-                    // TODO: implement card playing here
+                    if (player.aHand.Count < 1)
+                    {
+                        return false;
+                    }
+                    UIManager.Instance.StartSelection(UIManager.SelectionType.ThievesGuild, this);
                     return true;
                     break;
                 case TileType.Market:
                     if (player.coins > 0)
                     {
-                        // outsource the coin giving to the function maybe ?
-                        player.DrawFromMarket();
+                        UIManager.Instance.StartSelection(UIManager.SelectionType.BlackMarket, this);
                         return true;
                     }
                     break;
@@ -279,7 +281,9 @@ namespace Gameplay
                                     return true;
                                 }
                                 else return false;
-                            // TODO: implement the excess artifact selling once selection is in
+                            case TileType.SellExcessArtifacts:
+                                UIManager.Instance.StartSelection(UIManager.SelectionType.SellArtifacts, this);
+                                break;
                         }
                     }
                     break;
@@ -323,7 +327,7 @@ namespace Gameplay
             GameMaster.Instance.FetchPlayerByJob(target).pv.RPC("RpcAddCoin", RpcTarget.Others, amount);
         }
 
-        private void GiveCoinToOwner(byte amount, GameMaster.Job owningRole)
+        public void GiveCoinToOwner(byte amount, GameMaster.Job owningRole)
         {
             if (player.Equals(GameMaster.Instance.FetchPlayerByJob(owningRole)))
             {
@@ -349,6 +353,10 @@ namespace Gameplay
             if (other.gameObject.layer == LayerMask.NameToLayer("Pieces"))
             {
                 Piece piece = other.gameObject.GetComponent<Piece>();
+                if (!piece.pv.IsMine)
+                {
+                    return;
+                }
                 if (!piece.isPickedUp && !isUsed)
                 {
                     switch (piece.type)
@@ -360,7 +368,7 @@ namespace Gameplay
                             }
                             else
                             {
-                                piece.transform.position = pieceLocation.position+Vector3.up*.3f;
+                                piece.ResetPiecePosition();
                             }
                             break;
                         case GameMaster.PieceType.Thug:
@@ -370,11 +378,11 @@ namespace Gameplay
                             }
                             else
                             {
-                                piece.transform.position = pieceLocation.position+Vector3.up*.3f;
+                                piece.ResetPiecePosition();
                             }
                             break;
                         default:
-                            piece.transform.position = pieceLocation.position+Vector3.up*.3f;
+                            piece.ResetPiecePosition();
                             break;
                     }
                 }

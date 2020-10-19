@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Gameplay
 {
@@ -6,6 +7,8 @@ namespace Gameplay
     {
         private Card parentCard;
         [SerializeField] private Transform stepParent;
+        private float hoverTime;
+        [SerializeField] private float hoverTimer = 2f;
         private Rigidbody stepBody;
     
         // Start is called before the first frame update
@@ -25,12 +28,25 @@ namespace Gameplay
                 trans.rotation = stepParent.rotation;
             }
         }
-        
+
         private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("CursorFollower"))
+            {
+                parentCard.ToggleSelector(false);
+            }
+        }
+
+        private void OnTriggerStay(Collider other)
         {
             if (other.CompareTag("CursorFollower") && !parentCard.showing)
             {
-                parentCard.ToggleShowCard();
+                hoverTime += Time.deltaTime;
+                if (hoverTime >= hoverTimer)
+                {
+                    parentCard.ToggleShowCard();
+                    parentCard.ToggleSelector(true);
+                }
             }
         }
         
@@ -40,6 +56,11 @@ namespace Gameplay
             {
                 parentCard.ToggleShowCard();
             }
+            else
+            {
+                parentCard.ToggleSelector(true);
+            }
+            hoverTime = 0;
         }
     }
 }

@@ -8,7 +8,9 @@ namespace Gameplay
         public bool IsHovering { get; private set; }
         public Camera playerCam;
         private LayerMask tableMask;
-    
+        public bool isHoveringACard;
+        public Card hoveredACard;
+        public bool active;
     
         // Start is called before the first frame update
         void Start()
@@ -20,7 +22,10 @@ namespace Gameplay
         // Update is called once per frame
         void Update()
         {
-            AdjustPosition();
+            if (active)
+            {
+                AdjustPosition();
+            }
         }
 
         private void AdjustPosition()

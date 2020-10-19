@@ -14,6 +14,7 @@ namespace Gameplay
         public Sprite[] actionSprites = new Sprite[10];
         public Sprite[] artifactSprites = new Sprite[10];
         public Dictionary<GameMaster.Character, CharacterCard> characterCards;
+        public Dictionary<GameMaster.Character, string> characterNames;
         public Dictionary<GameMaster.Role, RoleCard> roleCards;
         public Dictionary<GameMaster.Artifact, ArtifactCard> artifactCards;
         public Dictionary<GameMaster.Action, ActionCard> actionCards;
@@ -68,6 +69,19 @@ namespace Gameplay
                 {GameMaster.Artifact.Scepter, new ArtifactCard("Scepter of Lightning", "A character of your choise immediately loses 3 health.", artifactSprites[7], 5)},
                 {GameMaster.Artifact.Venom, new ArtifactCard("Mantikor Venom", "Play this artifact together with an Assassin. For the remainder of this turn, that Assassin has a threat value of 5.", actionSprites[8], 3)},
                 {GameMaster.Artifact.Wand, new ArtifactCard("Wand of Fireballs", "Discard any number of pieces which threaten you.", artifactSprites[9], 5)}
+            };
+            characterNames = new Dictionary<GameMaster.Character, string>
+            {
+                {GameMaster.Character.Adventurer, "Ott"},
+                {GameMaster.Character.Necromancer, "Aria"},
+                {GameMaster.Character.Poisoner, "Aden"},
+                {GameMaster.Character.Ruffian, "Mary"},
+                {GameMaster.Character.Scion, "Adeline"},
+                {GameMaster.Character.Seducer, "Harkon"},
+                {GameMaster.Character.Sheriff, "John"},
+                {GameMaster.Character.BurglaryAce, "Steven"},
+                {GameMaster.Character.OldFox, "Selene"},
+                {GameMaster.Character.PitFighter, "Ruko"}
             };
         }
     }

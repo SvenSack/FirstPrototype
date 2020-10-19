@@ -48,7 +48,7 @@ GameObject:
   - component: {fileID: 7870335474363813472}
   - component: {fileID: 5020532962779686678}
   - component: {fileID: 3672029351032376055}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_TG
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -102,7 +102,6 @@ MonoBehaviour:
   hoverTimes:
   - 2
   - 4
-  pieceLocation: {fileID: 8392502989009480507}
   player: {fileID: 0}
   board: {fileID: 0}
   light: {fileID: 0}
@@ -190,7 +189,7 @@ GameObject:
   - component: {fileID: 1021126659769736841}
   - component: {fileID: 156104231869364754}
   - component: {fileID: 8684507281165565129}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_DS
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -244,7 +243,6 @@ MonoBehaviour:
   hoverTimes:
   - 2
   - 4
-  pieceLocation: {fileID: 8392502989009480507}
   player: {fileID: 0}
   board: {fileID: 0}
   light: {fileID: 0}
@@ -862,6 +860,76 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!64 &7539535683563905214
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4467512028571514276}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5942086413982268935, guid: 87978088314faf14385d62af450ef45b, type: 3}
+--- !u!64 &4855771046866882912
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4467512028790841454}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5942086413982268935, guid: 87978088314faf14385d62af450ef45b, type: 3}
+--- !u!64 &6476117404440360034
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4467512029040857663}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5942086413982268935, guid: 87978088314faf14385d62af450ef45b, type: 3}
+--- !u!64 &7913872308190433595
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4467512029582682157}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5942086413982268935, guid: 87978088314faf14385d62af450ef45b, type: 3}
+--- !u!64 &4746055768477325446
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4467512029662899961}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5942086413982268935, guid: 87978088314faf14385d62af450ef45b, type: 3}
 --- !u!1 &5015802158935606978
 GameObject:
   m_ObjectHideFlags: 0
@@ -910,7 +978,7 @@ GameObject:
   - component: {fileID: 736368199964166175}
   - component: {fileID: 3774457662595971427}
   - component: {fileID: 8003159942735630580}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_B
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -964,7 +1032,6 @@ MonoBehaviour:
   hoverTimes:
   - 2
   - 4
-  pieceLocation: {fileID: 8392502989009480507}
   player: {fileID: 0}
   board: {fileID: 0}
   light: {fileID: 0}
@@ -2398,8 +2465,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: -67.487, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -19, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 19.68, y: 23.493}
+  m_SizeDelta: {x: 277.36, y: 146.98}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5683023293093539205
 CanvasRenderer:
@@ -2437,8 +2504,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281013270
-  m_fontColor: {r: 0.08627451, g: 0.078431375, b: 0.16862746, a: 1}
+    rgba: 4290022508
+  m_fontColor: {r: 0.42352945, g: 0.54901963, b: 0.7058824, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -2456,12 +2523,12 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 80
+  m_fontSize: 101
   m_fontSizeBase: 80
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMax: 101
   m_fontStyle: 1
   m_textAlignment: 514
   m_characterSpacing: 0
@@ -2473,7 +2540,7 @@ MonoBehaviour:
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
-  m_firstOverflowCharacterIndex: 0
+  m_firstOverflowCharacterIndex: -1
   m_linkedTextComponent: {fileID: 0}
   m_isLinkedTextComponent: 0
   m_isTextTruncated: 0
@@ -3631,7 +3698,7 @@ GameObject:
   - component: {fileID: 5683023293507271287}
   - component: {fileID: 5181541922753665189}
   - component: {fileID: 7362563629577981494}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: CoinLocation
   m_TagString: Untagged
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
@@ -4859,7 +4926,7 @@ GameObject:
   - component: {fileID: 3761571231666318201}
   - component: {fileID: 3072914132379427928}
   - component: {fileID: 8052429215304371327}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_T
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -4913,7 +4980,6 @@ MonoBehaviour:
   hoverTimes:
   - 2
   - 4
-  pieceLocation: {fileID: 8392502989009480507}
   player: {fileID: 0}
   board: {fileID: 0}
   light: {fileID: 0}
@@ -4958,7 +5024,7 @@ GameObject:
   - component: {fileID: 1151368818980360674}
   - component: {fileID: 5240160094739988093}
   - component: {fileID: 2854133379844432580}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: TileZone_M
   m_TagString: Untagged
   m_Icon: {fileID: -1412012063857583412, guid: 0000000000000000d000000000000000, type: 0}
@@ -5012,7 +5078,6 @@ MonoBehaviour:
   hoverTimes:
   - 2
   - 4
-  pieceLocation: {fileID: 8392502989009480507}
   player: {fileID: 0}
   board: {fileID: 0}
   light: {fileID: 0}
@@ -5468,6 +5533,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 5683023292300539888}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4467512029662899961 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 87978088314faf14385d62af450ef45b,
+    type: 3}
+  m_PrefabInstance: {fileID: 5683023292300539888}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5683023292353491236
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5587,6 +5658,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 87978088314faf14385d62af450ef45b, type: 3}
+--- !u!1 &4467512029582682157 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 87978088314faf14385d62af450ef45b,
+    type: 3}
+  m_PrefabInstance: {fileID: 5683023292353491236}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &838957460631427646 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -4216859302048453862, guid: 87978088314faf14385d62af450ef45b,
@@ -5718,6 +5795,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 5683023292886977334}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4467512029040857663 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 87978088314faf14385d62af450ef45b,
+    type: 3}
+  m_PrefabInstance: {fileID: 5683023292886977334}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5683023293356272813
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5843,6 +5926,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 5683023293356272813}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4467512028571514276 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 87978088314faf14385d62af450ef45b,
+    type: 3}
+  m_PrefabInstance: {fileID: 5683023293356272813}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5683023293709531495
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5962,6 +6051,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 87978088314faf14385d62af450ef45b, type: 3}
+--- !u!1 &4467512028790841454 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 87978088314faf14385d62af450ef45b,
+    type: 3}
+  m_PrefabInstance: {fileID: 5683023293709531495}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &838957461968392829 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -4216859302048453862, guid: 87978088314faf14385d62af450ef45b,

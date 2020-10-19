@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8943043394244393275}
-  - component: {fileID: 8943043394244393276}
   - component: {fileID: 8943043394244393274}
+  - component: {fileID: 3150295077895336017}
   m_Layer: 0
   m_Name: GameMaster
   m_TagString: Untagged
@@ -32,43 +32,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8943043394244393276
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8943043394244393277}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70ed912fa871890488c9503a720cfa20, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  characterDeck: 
-  roleDeck: 
-  actionDeck: 
-  artifactDeck: 
-  playerSlots:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  isTesting: 1
-  participantObject: {fileID: 2173902868728459352, guid: bf2dc659254bc194b8842194078d5120,
-    type: 3}
-  cardPrefabs:
-  - {fileID: 3134104621269193279, guid: 251b186336a9afa43933f776e3f18e8a, type: 3}
-  - {fileID: 7701243812361817655, guid: dd2f336c559b81e4fb7025e0638b9506, type: 3}
-  - {fileID: 5436492771421655288, guid: 4c281639f9e0a2f44b1cc6a97a557c8e, type: 3}
-  - {fileID: 7410232730130418785, guid: 8441190824d123b4d96d46e316e8abae, type: 3}
-  - {fileID: 6250494608810893930, guid: b9d48bedf101ef84da47cfb48a4eaaa7, type: 3}
-  piecePrefabs:
-  - {fileID: 4187207563569883757, guid: 3e8f90365d8c7ac41a95dc9925a9aecb, type: 3}
-  - {fileID: 7357726203162015595, guid: f40e46605956547448e96581a77cfa96, type: 3}
-  - {fileID: 2986123299165391168, guid: 3e727c06ba27e2240821997aba8a8b03, type: 3}
 --- !u!114 &8943043394244393274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,3 +54,50 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!114 &3150295077895336017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8943043394244393277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70ed912fa871890488c9503a720cfa20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterDeck: 07000000040000000600000000000000010000000200000005000000030000000900000008000000
+  roleDeck: 000000000100000002000000030000000400000005000000
+  actionDeck: 0900000009000000010000000100000000000000000000000800000008000000030000000300000006000000060000000200000002000000050000000500000007000000070000000400000004000000
+  artifactDeck: 020000000200000002000000020000000600000006000000060000000600000007000000070000000700000005000000050000000500000005000000030000000300000003000000030000000000000000000000000000000000000000000000080000000100000001000000010000000400000004000000040000000900000009000000
+  playerSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  jobBoards:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  isTesting: 1
+  workerPieces: []
+  turnCounter: 0
+  playerNumber: 0
+  pv: {fileID: 0}
+  participantObject: {fileID: 2173902868728459352, guid: bf2dc659254bc194b8842194078d5120,
+    type: 3}
+  cardPrefabs:
+  - {fileID: 3134104621269193279, guid: 251b186336a9afa43933f776e3f18e8a, type: 3}
+  - {fileID: 7701243812361817655, guid: dd2f336c559b81e4fb7025e0638b9506, type: 3}
+  - {fileID: 5436492771421655288, guid: 4c281639f9e0a2f44b1cc6a97a557c8e, type: 3}
+  - {fileID: 7410232730130418785, guid: 8441190824d123b4d96d46e316e8abae, type: 3}
+  - {fileID: 0}
+  piecePrefabs:
+  - {fileID: 4187207563569883757, guid: 3e8f90365d8c7ac41a95dc9925a9aecb, type: 3}
+  - {fileID: 7357726203162015595, guid: f40e46605956547448e96581a77cfa96, type: 3}
+  - {fileID: 2986123299165391168, guid: 3e727c06ba27e2240821997aba8a8b03, type: 3}

@@ -197,6 +197,7 @@
         </e>
         <e p="Scripts" t="Include">
           <e p="Gameplay" t="Include">
+            <e p="AssignmentToggle.cs" t="Include" />
             <e p="Board.cs" t="Include" />
             <e p="Card.cs" t="Include" />
             <e p="CardHover.cs" t="Include" />
@@ -205,6 +206,7 @@
             <e p="Decklist.cs" t="Include" />
             <e p="GameMaster.cs" t="Include" />
             <e p="Participant.cs" t="Include" />
+            <e p="PayAssignment.cs" t="Include" />
             <e p="Piece.cs" t="Include" />
             <e p="PlayerSlot.cs" t="Include" />
             <e p="Tile.cs" t="Include" />
@@ -216,7 +218,6 @@
             <e p="PlayerListing.cs" t="Include" />
             <e p="PlayerNameInputfield.cs" t="Include" />
           </e>
-          <e p="SimpleCameraController.cs" t="Include" />
         </e>
         <e p="TextMesh Pro" t="Include">
           <e p="Examples &amp; Extras" t="Include">

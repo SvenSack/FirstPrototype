@@ -7,12 +7,15 @@ namespace Gameplay
 {
     public class Card : MonoBehaviour
     {
+        public GameMaster.CardType cardType;
+        public bool isPrivate = true;
         public TextMeshProUGUI cardName;
         public TextMeshProUGUI text;
         public TextMeshProUGUI extraText1;
         public TextMeshProUGUI extraText2;
         public Image illustration;
         public Image icon;
+        [SerializeField] private GameObject highlighter;
         [SerializeField] private Rigidbody cardBody;
         private Transform cardTransform;
         private BoxCollider cardCollider;
@@ -25,6 +28,24 @@ namespace Gameplay
         {
             cardTransform = cardBody.transform;
             cardCollider = cardBody.GetComponent<BoxCollider>();
+            highlighter.SetActive(false);
+        }
+
+        public void ToggleSelector(bool doubleCheck)
+        {
+            highlighter.SetActive(!highlighter.activeSelf);
+            if (doubleCheck && highlighter.activeSelf)
+            {
+                highlighter.SetActive(false);
+            }
+            if (UIManager.Instance.isSelectingACard)
+            {
+                if (cardType == GameMaster.CardType.Action || cardType == GameMaster.CardType.Artifact)
+                {
+                    CursorFollower.Instance.hoveredACard = this;
+                    CursorFollower.Instance.isHoveringACard = highlighter.activeSelf;
+                }
+            }
         }
 
         public void ToggleShowCard()

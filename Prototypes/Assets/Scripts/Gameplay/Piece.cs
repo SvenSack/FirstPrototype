@@ -6,11 +6,13 @@ namespace Gameplay
 {
     public class Piece : MonoBehaviour
     {
-        public bool isUsed;
+        public bool isUsed { get; private set; }
         public bool isPickedUp;
+        public bool isPrivate = true;
         public PhotonView pv;
         public Rigidbody rb;
         public Camera cam;
+        public Board originBoard;
         private LayerMask tableMask;
         private int pieceLayer;
         public GameMaster.PieceType type;
@@ -66,6 +68,7 @@ namespace Gameplay
             }
             else
             {
+                ResetPiecePosition();
                 isUsed = false;
                 gameObject.layer = pieceLayer;
             }
@@ -80,6 +83,18 @@ namespace Gameplay
             }
 
             return false;
+        }
+        
+        public void ResetPiecePosition()
+        {
+            if (isPrivate)
+            {
+                transform.position = UIManager.Instance.participant.mySlot.pieceLocation.position + Vector3.up * .3f;
+            }
+            else
+            {
+                transform.position = originBoard.pieceLocation.position + Vector3.up * .3f;
+            }
         }
     }
 }

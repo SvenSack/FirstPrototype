@@ -10,17 +10,62 @@ namespace Gameplay
 {
     public class GameMaster : MonoBehaviourPunCallbacks
     { 
-        public List<Character> characterDeck;
-        public List<Role> roleDeck;
-        public List<Action> actionDeck;
-        public List<Artifact> artifactDeck;
+        public List<Character> characterDeck = new List<Character> {
+            Character.Adventurer, 
+            Character.Necromancer,
+            Character.Poisoner,
+            Character.Ruffian,
+            Character.Scion,
+            Character.Seducer,
+            Character.Sheriff,
+            Character.BurglaryAce,
+            Character.OldFox,
+            Character.PitFighter};
+        public List<Role> roleDeck = new List<Role>
+        {
+            Role.Leader,
+            Role.Rogue,
+            Role.Paladin,
+            Role.Gangster,
+            Role.Vigilante,
+            Role.Noble
+        };
+        public List<Action> actionDeck = new List<Action>
+        {
+            Action.Improvise, Action.Improvise,
+            Action.DoubleAgent, Action.DoubleAgent,
+            Action.SecretCache, Action.SecretCache,
+            Action.AskForFavours, Action.AskForFavours,
+            Action.CallInBackup, Action.CallInBackup,
+            Action.ExecuteAHeist, Action.ExecuteAHeist,
+            Action.RunForOffice, Action.RunForOffice,
+            Action.SwearTheOaths, Action.SwearTheOaths,
+            Action.BribeTheTaxOfficer, Action.BribeTheTaxOfficer,
+            Action.DealWithItYourself, Action.DealWithItYourself
+        };
+        public List<Artifact> artifactDeck = new List<Artifact>
+        {
+            Artifact.Ball, Artifact.Ball, Artifact.Ball, Artifact.Ball,
+            Artifact.Bauble, Artifact.Bauble, Artifact.Bauble, Artifact.Bauble,
+            Artifact.Bow, Artifact.Bow, Artifact.Bow,
+            Artifact.Dagger, Artifact.Dagger, Artifact.Dagger, Artifact.Dagger,
+            Artifact.Periapt, Artifact.Periapt, Artifact.Periapt, Artifact.Periapt,
+            Artifact.Potion, Artifact.Potion, Artifact.Potion, Artifact.Potion, Artifact.Potion,
+            Artifact.Scepter,
+            Artifact.Serum, Artifact.Serum, Artifact.Serum,
+            Artifact.Venom, Artifact.Venom, Artifact.Venom,
+            Artifact.Wand, Artifact.Wand
+        };
+        
         public static GameMaster Instance;
         public PhotonView[] playerSlots;
-        public PhotonView[] jobBoards;
+        public PhotonView[] jobBoards = new PhotonView[5];
         public bool isTesting;
         public Dictionary<Role, int> playerRoles = new Dictionary<Role, int>();
+        public Dictionary<Character, Participant> characterIndex = new Dictionary<Character, Participant>();
         public List<Piece> workerPieces = new List<Piece>();
         public int turnCounter;
+        public int playerNumber;
 
         public PhotonView pv;
         [SerializeField] private GameObject participantObject = null;
@@ -106,24 +151,56 @@ namespace Gameplay
 
         private void Start()
         {
-            pv = GetComponent<PhotonView>();
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 6-PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                CreateDeck((CardType)i);
+                roleDeck.RemoveAt(roleDeck.Count-1);
             }
+            pv = GetComponent<PhotonView>();
             Instance = this;
-            PhotonNetwork.Instantiate(participantObject.name, Vector3.zero, Quaternion.identity, 0);
+            StartCoroutine(CommenceGame());
         }
 
+        IEnumerator CommenceGame()
+        {
+            yield return new WaitForSeconds(.1f);
+            Debug.LogAssertion("Created Participant");
+            PhotonNetwork.Instantiate(participantObject.name, Vector3.zero, Quaternion.identity, 0);
+            CursorFollower.Instance.active = true;
+        }
+        
         private void Update()
         {
             if (artifactDeck.Count < 1)
             {
-                CreateDeck(CardType.Artifact);
+                artifactDeck = new List<Artifact>
+                {
+                    Artifact.Ball, Artifact.Ball, Artifact.Ball, Artifact.Ball,
+                    Artifact.Bauble, Artifact.Bauble, Artifact.Bauble, Artifact.Bauble,
+                    Artifact.Bow, Artifact.Bow, Artifact.Bow,
+                    Artifact.Dagger, Artifact.Dagger, Artifact.Dagger, Artifact.Dagger,
+                    Artifact.Periapt, Artifact.Periapt, Artifact.Periapt, Artifact.Periapt,
+                    Artifact.Potion, Artifact.Potion, Artifact.Potion, Artifact.Potion, Artifact.Potion,
+                    Artifact.Scepter,
+                    Artifact.Serum, Artifact.Serum, Artifact.Serum,
+                    Artifact.Venom, Artifact.Venom, Artifact.Venom,
+                    Artifact.Wand, Artifact.Wand
+                };
             }
             if (actionDeck.Count < 1)
             {
-                CreateDeck(CardType.Action);
+                actionDeck = new List<Action>
+                {
+                    Action.Improvise, Action.Improvise,
+                    Action.DoubleAgent, Action.DoubleAgent,
+                    Action.SecretCache, Action.SecretCache,
+                    Action.AskForFavours, Action.AskForFavours,
+                    Action.CallInBackup, Action.CallInBackup,
+                    Action.ExecuteAHeist, Action.ExecuteAHeist,
+                    Action.RunForOffice, Action.RunForOffice,
+                    Action.SwearTheOaths, Action.SwearTheOaths,
+                    Action.BribeTheTaxOfficer, Action.BribeTheTaxOfficer,
+                    Action.DealWithItYourself, Action.DealWithItYourself
+                };
             }
         }
 
@@ -188,6 +265,7 @@ namespace Gameplay
                         if (roleDeck[i] == target2)
                         {
                             roleDeck.RemoveAt(i);
+                            Debug.LogAssertion("removed role " + target2);
                             break;
                         }
                     }
@@ -218,64 +296,6 @@ namespace Gameplay
             
         }
 
-        private void CreateDeck(CardType type)
-        {
-            switch (type)
-            {
-                case CardType.Character:
-                    characterDeck = new List<Character> {
-                        Character.Adventurer, 
-                        Character.Necromancer,
-                        Character.Poisoner,
-                        Character.Ruffian,
-                        Character.Scion,
-                        Character.Seducer,
-                        Character.Sheriff,
-                        Character.BurglaryAce,
-                        Character.OldFox,
-                        Character.PitFighter};
-                    break;
-                case CardType.Role:
-                    roleDeck = new List<Role>();
-                    for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
-                    {
-                        roleDeck.Add((Role)i);
-                    }
-
-                    break;
-                case CardType.Action:
-                    actionDeck = new List<Action>
-                    {
-                        Action.Improvise, Action.Improvise,
-                        Action.DoubleAgent, Action.DoubleAgent,
-                        Action.SecretCache, Action.SecretCache,
-                        Action.AskForFavours, Action.AskForFavours,
-                        Action.CallInBackup, Action.CallInBackup,
-                        Action.ExecuteAHeist, Action.ExecuteAHeist,
-                        Action.RunForOffice, Action.RunForOffice,
-                        Action.SwearTheOaths, Action.SwearTheOaths,
-                        Action.BribeTheTaxOfficer, Action.BribeTheTaxOfficer,
-                        Action.DealWithItYourself, Action.DealWithItYourself
-                    };
-                    break;
-                case CardType.Artifact:
-                    artifactDeck = new List<Artifact>
-                    {
-                        Artifact.Ball, Artifact.Ball, Artifact.Ball, Artifact.Ball,
-                        Artifact.Bauble, Artifact.Bauble, Artifact.Bauble, Artifact.Bauble,
-                        Artifact.Bow, Artifact.Bow, Artifact.Bow,
-                        Artifact.Dagger, Artifact.Dagger, Artifact.Dagger, Artifact.Dagger,
-                        Artifact.Periapt, Artifact.Periapt, Artifact.Periapt, Artifact.Periapt,
-                        Artifact.Potion, Artifact.Potion, Artifact.Potion, Artifact.Potion, Artifact.Potion,
-                        Artifact.Scepter,
-                        Artifact.Serum, Artifact.Serum, Artifact.Serum,
-                        Artifact.Venom, Artifact.Venom, Artifact.Venom,
-                        Artifact.Wand, Artifact.Wand
-                    };
-                    break;
-            }
-        }
-
         public GameObject ConstructCard(CardType type, int enumIndex)
         {
             Decklist dL = Decklist.Instance;
@@ -287,6 +307,7 @@ namespace Gameplay
                     Card parts = card.GetComponent<Card>();
                     if (dL.actionCards.TryGetValue((Action) enumIndex, out ActionCard thisCard))
                     {
+                        parts.cardType = type;
                         parts.illustration.sprite = thisCard.illustration;
                         parts.cardName.text = thisCard.name;
                         parts.text.text = thisCard.effectText;
@@ -301,6 +322,7 @@ namespace Gameplay
                     Card partsA = card.GetComponent<Card>();
                     if (dL.artifactCards.TryGetValue((Artifact) enumIndex, out ArtifactCard thisACard))
                     {
+                        partsA.cardType = type;
                         partsA.illustration.sprite = thisACard.illustration;
                         partsA.cardName.text = thisACard.name;
                         partsA.text.text = thisACard.effectText;
@@ -316,6 +338,7 @@ namespace Gameplay
                     Card partsC = card.GetComponent<Card>();
                     if (dL.characterCards.TryGetValue((Character) enumIndex, out CharacterCard thisCCard))
                     {
+                        partsC.cardType = type;
                         partsC.illustration.sprite = thisCCard.illustration;
                         partsC.cardName.text = thisCCard.name;
                         partsC.text.text = thisCCard.effectText;
@@ -332,6 +355,7 @@ namespace Gameplay
                     Card partsR = card.GetComponent<Card>();
                     if (dL.roleCards.TryGetValue((Role) enumIndex, out RoleCard thisRCard))
                     {
+                        partsR.cardType = type;
                         partsR.illustration.sprite = thisRCard.illustration;
                         partsR.cardName.text = thisRCard.name;
                         partsR.text.text = thisRCard.effectText;
@@ -348,41 +372,20 @@ namespace Gameplay
             }
             return card;
         }
-
-        [PunRPC]
+        
         public void EndTurn()
         {
-            Piece[] allPieces = FindObjectsOfType<Piece>();
-            int[,] bill = new int[7,2];
-            foreach (var piece in allPieces)
-            {
-                switch (piece.type)
-                {
-                    case PieceType.Thug:
-                        bill[FetchPlayerByPlayer(piece.pv.Controller).playerNumber,0]+=1;
-                        break;
-                    case PieceType.Assassin:
-                        bill[FetchPlayerByPlayer(piece.pv.Controller).playerNumber,1]+=1;
-                        break;
-                    case PieceType.Worker:
-                        piece.pv.TransferOwnership(playerSlots[0].Controller);
-                        piece.ToggleUse();
-                        break;
-                }
-            }
-            
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                FetchPlayerByNumber(i).pv.RPC("RpcEndTurn", RpcTarget.Others, bill[i,0], bill[i,1]);
+                FetchPlayerByNumber(i).pv.RPC("RpcEndTurn", RpcTarget.All);
             }
-            
-            
         }
 
         [PunRPC]
-        public void RpcAddRoleIndex(int playerNumber, int roleIndex)
+        public void RpcAddRoleIndex(int playerNum, int roleIndex)
         {
-            playerRoles.Add((Role)roleIndex, playerNumber);
+            playerRoles.Add((Role)roleIndex, playerNum);
+            playerNumber++;
         }
 
         public Participant FetchPlayerByNumber(int playerNumber)
@@ -405,8 +408,15 @@ namespace Gameplay
 
         public Participant FetchPlayerByJob(Job job)
         {
-            Player player = jobBoards[(int) job].Controller;
-            return FetchPlayerByPlayer(player);
+            if (jobBoards[(int) job] != null)
+            {
+                Player player = jobBoards[(int) job].Controller;
+                return FetchPlayerByPlayer(player);
+            }
+            else
+            {
+                return FetchLeader();
+            }
         }
 
         public Participant FetchLeader()
