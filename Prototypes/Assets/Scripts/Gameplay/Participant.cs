@@ -1,4 +1,5 @@
-﻿using Photon.Pun;
+﻿using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
@@ -63,7 +64,7 @@ namespace Gameplay
 
                 if (Input.GetKeyDown(KeyCode.KeypadPlus))
                 {
-                    GameMaster.Instance.EndTurn();
+                        GameMaster.Instance.EndTurn(false);
                 }
             }
         }
@@ -72,7 +73,7 @@ namespace Gameplay
         { // this is what gets us our player seat at the start
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                if (PhotonNetwork.PlayerList[i].Equals(pv.Controller))
+                if (Equals(PhotonNetwork.PlayerList[i], pv.Controller))
                     playerNumber = i;
             }
 
@@ -84,6 +85,7 @@ namespace Gameplay
             mySlot = slot.GetComponent<PlayerSlot>();
             mySlot.player = this;
             mySlot.Board.SetActive(true);
+            GameMaster.Instance.seatsClaimed++;
         }
 
         private void GameSetup()
@@ -93,42 +95,11 @@ namespace Gameplay
             {
                 tile.player = this;
             }
-            
-            character = (GameMaster.Character)GameMaster.Instance.DrawCard(GameMaster.CardType.Character);
-            Decklist.Instance.characterCards.TryGetValue(character, out var tempCard);
-            GameObject charCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Character, (int) character);
-            var position = mySlot.rCCardLocation.position;
-            charCard.transform.position = position + new Vector3(0,.3f,0);
-            var rotation = mySlot.rCCardLocation.rotation;
-            charCard.transform.rotation = rotation;
-            charCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
             coinCounter = mySlot.coinCounter;
-            AddCoin(tempCard.wealth);
-            AddHealth(tempCard.health);
-            role = (GameMaster.Role) GameMaster.Instance.DrawCard(GameMaster.CardType.Role);
-            GameObject roleCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Role, (int) role);
-            roleCard.transform.position = position + new Vector3(.5f,.3f,.5f);
-            roleCard.transform.rotation = rotation;
-            roleCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
-            if (role == GameMaster.Role.Leader)
-            {
-                AddHealth(1);
-            }
-            GameMaster.Instance.pv.RPC("RpcAddRoleIndex", RpcTarget.AllBuffered, playerNumber, (int)role);
-            if (character == GameMaster.Character.Adventurer)
-            {
-                DrawACard(GameMaster.CardType.Artifact);
-                DrawACard(GameMaster.CardType.Artifact);
-                DrawACard(GameMaster.CardType.Artifact);
-            }
-
             CursorFollower.Instance.playerCam = mySlot.perspective;
-
             UIManager.Instance.participant = this;
             UIManager.Instance.playerCamera = mySlot.perspective;
             UIManager.Instance.player = pv.Controller;
-            
-            GameMaster.Instance.characterIndex.Add(character, this);
         }
 
         public void AddCoin(int amount)
@@ -202,6 +173,16 @@ namespace Gameplay
                 nPPiece.ToggleUse();
             }
         }
+        
+        IEnumerator PrepAndStart()
+        {
+            yield return new WaitForSeconds(1f);
+            UIManager.Instance.UpdateSelectionNames();
+            if (PhotonNetwork.IsMasterClient)
+            {
+                GameMaster.Instance.EndTurn(true);
+            }
+        }
 
         [PunRPC]
         public void RpcAddCoin(byte amount)
@@ -213,11 +194,14 @@ namespace Gameplay
         }
 
         [PunRPC]
-        public void RpcAddPiece(byte pieceIndex)
+        public void RpcAddPiece(byte pieceIndex, int amount)
         {
             if (pv.IsMine)
             {
-                AddPiece((GameMaster.PieceType)pieceIndex, true);
+                for (int i = 0; i < amount; i++)
+                {
+                    AddPiece((GameMaster.PieceType)pieceIndex, false);
+                }
             }
         }
 
@@ -240,39 +224,85 @@ namespace Gameplay
         }
 
         [PunRPC]
-        public void RpcEndTurn()
+        public void RpcAssignRoleAndChar(byte roleIndex, int charIndex)
+        {
+            character = (GameMaster.Character) charIndex;
+            GameMaster.Instance.characterIndex.Add(character, this);
+            
+            role = (GameMaster.Role) roleIndex;
+            GameMaster.Instance.playerRoles.Add(role, playerNumber);
+
+            if (pv.IsMine)
+            {
+                Decklist.Instance.characterCards.TryGetValue(character, out var tempCard);
+                GameObject charCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Character, (int) character);
+                var position = mySlot.rCCardLocation.position;
+                charCard.transform.position = position + new Vector3(0,.3f,0);
+                var rotation = mySlot.rCCardLocation.rotation;
+                charCard.transform.rotation = rotation;
+                charCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
+                AddCoin(tempCard.wealth);
+                AddHealth(tempCard.health);
+                
+                GameObject roleCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Role, (int) role);
+                roleCard.transform.position = position + new Vector3(.5f,.3f,.5f);
+                roleCard.transform.rotation = rotation;
+                roleCard.GetComponent<Card>().hoverLocation = mySlot.hoverLocation;
+                
+                if (role == GameMaster.Role.Leader)
+                {
+                    AddHealth(1);
+                }
+                
+                if (character == GameMaster.Character.Adventurer)
+                {
+                    DrawACard(GameMaster.CardType.Artifact);
+                    DrawACard(GameMaster.CardType.Artifact);
+                    DrawACard(GameMaster.CardType.Artifact);
+                }
+
+                StartCoroutine(PrepAndStart());
+            }
+        }
+
+        [PunRPC]
+        public void RpcEndTurn(bool isFirst)
         {
             if (pv.IsMine)
             {
-                UIManager.Instance.StartSelection(UIManager.SelectionType.PostTurnPay, null);
-
-                switch (character)
+                if (!isFirst)
                 {
-                    case GameMaster.Character.Poisoner:
-                        UIManager.Instance.StartSelection(UIManager.SelectionType.Poisoner, null);
-                        break;
-                    case GameMaster.Character.Scion:
-                        AddCoin(2);
-                        break;
-                    case GameMaster.Character.Seducer:
-                        UIManager.Instance.StartSelection(UIManager.SelectionType.Seducer, null);
-                        break;
-                    case GameMaster.Character.PitFighter:
-                        AddPiece(GameMaster.PieceType.Thug, false);
-                        break;
-                }
+                    UIManager.Instance.StartSelection(UIManager.SelectionType.PostTurnPay, null);
 
-                foreach (var tile in FindObjectsOfType<Tile>())
-                {
-                    if (tile.isUsed)
+                    switch (character)
                     {
-                        tile.ToggleUsed();
+                        case GameMaster.Character.Poisoner:
+                            UIManager.Instance.StartSelection(UIManager.SelectionType.Poisoner, null);
+                            break;
+                        case GameMaster.Character.Scion:
+                            AddCoin(2);
+                            break;
+                        case GameMaster.Character.Seducer:
+                            UIManager.Instance.StartSelection(UIManager.SelectionType.Seducer, null);
+                            break;
+                        case GameMaster.Character.PitFighter:
+                            AddPiece(GameMaster.PieceType.Thug, false);
+                            break;
                     }
+                    
+                    // TODO add the revealed gangster here
+
+                    foreach (var tile in FindObjectsOfType<Tile>())
+                    {
+                        if (tile.isUsed)
+                        {
+                            tile.ToggleUsed();
+                        }
+                    }
+                
+                    // TODO: resolve threat & threat pieces
                 }
                 
-                // TODO: resolve threat & threat pieces ?
-                
-                GameMaster.Instance.turnCounter++;
                 if (role == GameMaster.Role.Leader)
                 {
                     switch (GameMaster.Instance.turnCounter)
@@ -280,17 +310,19 @@ namespace Gameplay
                         case 0:
                         case 2:
                         case 4:
-                            // TODO: assign roles with UI selection
+                            UIManager.Instance.StartSelection(UIManager.SelectionType.JobAssignment, null);
+                            goto case 3;
                         case 1:
                         case 3:
                             // TODO: draw new threats
-                            // TODO: assign workers with UI selection
+                            UIManager.Instance.StartSelection(UIManager.SelectionType.WorkerAssignment, null);
                             break;
                         case 5:
                             // TODO: end game
                             break;
                     }
                 }
+                GameMaster.Instance.turnCounter++;
             }
         }
     }

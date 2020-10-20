@@ -76,7 +76,7 @@ namespace Gameplay
 
         public void CreateToggles()
         {
-            Piece[] pieces = GameObject.FindObjectsOfType<Piece>();
+            Piece[] pieces = FindObjectsOfType<Piece>();
             foreach (var piece in pieces)
             {
                 if (piece.pv.IsMine)
@@ -89,6 +89,9 @@ namespace Gameplay
                             break;
                         case GameMaster.PieceType.Thug:
                             inst = Instantiate(togglePrefabs[1], transform);
+                            break;
+                        case GameMaster.PieceType.Worker:
+                            PhotonNetwork.Destroy(piece.pv);
                             break;
                     }
                     if (piece.type != GameMaster.PieceType.Worker)

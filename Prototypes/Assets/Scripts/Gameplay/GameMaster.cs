@@ -64,8 +64,8 @@ namespace Gameplay
         public Dictionary<Role, int> playerRoles = new Dictionary<Role, int>();
         public Dictionary<Character, Participant> characterIndex = new Dictionary<Character, Participant>();
         public List<Piece> workerPieces = new List<Piece>();
-        public int turnCounter;
-        public int playerNumber;
+        public byte turnCounter;
+        public byte seatsClaimed;
 
         public PhotonView pv;
         [SerializeField] private GameObject participantObject = null;
@@ -157,15 +157,29 @@ namespace Gameplay
             }
             pv = GetComponent<PhotonView>();
             Instance = this;
-            StartCoroutine(CommenceGame());
+            if (PhotonNetwork.IsMasterClient)
+            {
+                StartCoroutine(CommenceGame());
+            }
+            PhotonNetwork.Instantiate(participantObject.name, Vector3.zero, Quaternion.identity, 0);
+            CursorFollower.Instance.active = true;
         }
 
         IEnumerator CommenceGame()
         {
-            yield return new WaitForSeconds(.1f);
-            Debug.LogAssertion("Created Participant");
-            PhotonNetwork.Instantiate(participantObject.name, Vector3.zero, Quaternion.identity, 0);
-            CursorFollower.Instance.active = true;
+            yield return new WaitUntil(StartCondition);
+            Participant[] players = FindObjectsOfType<Participant>();
+            foreach (var player in players)
+            {
+                byte roleNum = (byte) DrawCard(CardType.Role);
+                int charNum = DrawCard(CardType.Character);
+                player.pv.RPC("RpcAssignRoleAndChar", RpcTarget.AllBufferedViaServer, roleNum, charNum);
+            }
+        }
+
+        private bool StartCondition()
+        {
+            return seatsClaimed == PhotonNetwork.CurrentRoom.PlayerCount;
         }
         
         private void Update()
@@ -221,22 +235,22 @@ namespace Gameplay
                 case CardType.Character:
                     int randomPick = Random.Range(0, characterDeck.Count);
                     Character returnValue = characterDeck[randomPick];
-                    pv.RPC("RemoveFromDeck", RpcTarget.AllBuffered,(int)type, (int)returnValue);
+                    pv.RPC("RemoveFromDeck", RpcTarget.All,(int)type, (int)returnValue);
                     return (int)returnValue;
                 case CardType.Role:
                     int randomPick2 = Random.Range(0, roleDeck.Count);
                     Role returnValue2 = roleDeck[randomPick2];
-                    pv.RPC("RemoveFromDeck", RpcTarget.AllBuffered,(int)type, (int)returnValue2);
+                    pv.RPC("RemoveFromDeck", RpcTarget.All,(int)type, (int)returnValue2);
                     return (int)returnValue2;
                 case CardType.Artifact:
                     int randomPick3 = Random.Range(0, artifactDeck.Count);
                     Artifact returnValue3 = artifactDeck[randomPick3];
-                    pv.RPC("RemoveFromDeck", RpcTarget.AllBuffered,(int)type, (int)returnValue3);
+                    pv.RPC("RemoveFromDeck", RpcTarget.All,(int)type, (int)returnValue3);
                     return (int)returnValue3;
                 case CardType.Action:
                     int randomPick4 = Random.Range(0, actionDeck.Count);
                     Action returnValue4 = actionDeck[randomPick4];
-                    pv.RPC("RemoveFromDeck", RpcTarget.AllBuffered,(int)type, (int)returnValue4);
+                    pv.RPC("RemoveFromDeck", RpcTarget.All,(int)type, (int)returnValue4);
                     return (int)returnValue4;
                 default: return -1;
             }
@@ -373,19 +387,12 @@ namespace Gameplay
             return card;
         }
         
-        public void EndTurn()
+        public void EndTurn(bool isFirst)
         {
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                FetchPlayerByNumber(i).pv.RPC("RpcEndTurn", RpcTarget.All);
+                FetchPlayerByNumber(i).pv.RPC("RpcEndTurn", RpcTarget.All, isFirst);
             }
-        }
-
-        [PunRPC]
-        public void RpcAddRoleIndex(int playerNum, int roleIndex)
-        {
-            playerRoles.Add((Role)roleIndex, playerNum);
-            playerNumber++;
         }
 
         public Participant FetchPlayerByNumber(int playerNumber)

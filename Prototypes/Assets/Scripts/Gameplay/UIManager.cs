@@ -3,6 +3,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Gameplay
@@ -19,13 +20,22 @@ namespace Gameplay
         public Tile selectingTile;
         public bool isSelectingACard;
         public bool isSelectingAPlayer;
+        public bool isSelectingDistribution;
+        private bool isGrabbingUI;
         public SelectionType typeOfSelection;
         [SerializeField] GameObject[] SelectionPopUps = new GameObject[2];
         [SerializeField] private Transform playedCardsLocation;
         [SerializeField] private PayAssignment postTurnPayAssigner;
         [SerializeField] private GameObject[] playerSelectorsChar = new GameObject[5];
         [SerializeField] private GameObject playerSelectorChar;
+        [SerializeField] private GameObject workerUIPrefab;
+        [SerializeField] private GameObject[] jobSelectionUIPrefabs = new GameObject[5];
         private List<SelectionType> selectionBuffer = new List<SelectionType>();
+        public DistributionPool[] workerDistributionPools = new DistributionPool[7];
+        public DistributionPool[] jobDistributionPools = new DistributionPool[7];
+        private GraphicRaycaster gRayCaster;
+        private EventSystem eventSys;
+        private DistributionPieceUI grabbedUI;
 
         public enum SelectionType
         {
@@ -35,7 +45,8 @@ namespace Gameplay
             PostTurnPay,
             Poisoner,
             Seducer,
-            
+            WorkerAssignment,
+            JobAssignment,
         }
     
         void Start()
@@ -52,6 +63,21 @@ namespace Gameplay
                selector.SetActive(false); 
             }
             playerSelectorChar.SetActive(false);
+            gRayCaster = GetComponent<GraphicRaycaster>();
+            foreach (var wdp in workerDistributionPools)
+            {
+                if (wdp.isFlex)
+                {
+                    wdp.gameObject.SetActive(false);
+                }
+            }
+            foreach (var jdp in jobDistributionPools)
+            {
+                if (jdp.isFlex)
+                {
+                    jdp.gameObject.SetActive(false);
+                }
+            }
         }
 
         void Update()
@@ -84,6 +110,46 @@ namespace Gameplay
                             break;
                     }
                 }
+
+                if (isSelectingDistribution && !isGrabbingUI)
+                {
+                    PointerEventData eventData = new PointerEventData(eventSys) {position = Input.mousePosition};
+                    List<RaycastResult> results = new List<RaycastResult>();
+                    gRayCaster.Raycast(eventData, results);
+                    foreach (RaycastResult result in results)
+                    {
+                        if (result.gameObject.CompareTag("DistributionItem"))
+                        {
+                            grabbedUI = result.gameObject.GetComponent<DistributionPieceUI>();
+                            isGrabbingUI = true;
+                            grabbedUI.Grab();
+                        }
+                    }
+                }
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                if (isSelectingDistribution && isGrabbingUI)
+                {
+                    PointerEventData eventData = new PointerEventData(eventSys) {position = Input.mousePosition};
+                    List<RaycastResult> results = new List<RaycastResult>();
+                    gRayCaster.Raycast(eventData, results);
+                    foreach (RaycastResult result in results)
+                    {
+                        if (result.gameObject.CompareTag("DistributionPanel"))
+                        {
+                            isGrabbingUI = false;
+                            grabbedUI.Release(result.gameObject.GetComponent<DistributionPool>());
+                            grabbedUI = null;
+                        }
+                    }
+
+                    if (isGrabbingUI)
+                    {
+                        grabbedUI.Release(null);
+                    }
+                }
             }
         }
 
@@ -111,6 +177,17 @@ namespace Gameplay
                 isSelectingAPlayer = false;
                 playerSelectorChar.SetActive(false);
             }
+
+            if (isSelectingDistribution)
+            {
+                isSelectingDistribution = false;
+                if (isGrabbingUI)
+                {
+                    grabbedUI.Release(null);
+                }
+                isGrabbingUI = false;
+                grabbedUI = null;
+            }
         }
 
         public void StartSelection(SelectionType type, Tile thisTile)
@@ -134,9 +211,24 @@ namespace Gameplay
                         break;
                     case SelectionType.Poisoner:
                     case SelectionType.Seducer:
-                        UpdateSelectionNames();
                         isSelectingAPlayer = true;
                         playerSelectorChar.SetActive(true);
+                        break;
+                    case SelectionType.WorkerAssignment:
+                        isSelectingDistribution = true;
+                        int workerAmount = GameMaster.Instance.turnCounter + GameMaster.Instance.seatsClaimed * 3;
+                        // TODO: add revealed mechanic paladin here
+                        for (int i = 0; i < workerAmount; i++)
+                        {
+                            workerDistributionPools[0].ChangeItem(Instantiate(workerUIPrefab, transform), true);
+                        }
+                        break;
+                    case SelectionType.JobAssignment:
+                        isSelectingDistribution = true;
+                        foreach (var t in jobSelectionUIPrefabs)
+                        {
+                            jobDistributionPools[0].ChangeItem(Instantiate(t, transform), true);
+                        }
                         break;
                 }
             }
@@ -146,17 +238,30 @@ namespace Gameplay
             }
         }
 
-        private void UpdateSelectionNames()
+        public void UpdateSelectionNames()
         {
-            for (int i = 0; i < GameMaster.Instance.playerNumber; i++)
+            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
             {
                 Participant part = GameMaster.Instance.FetchPlayerByNumber(i);
-                if (part != participant)
+                if (i != participant.playerNumber)
                 {
                     playerSelectorsChar[i].SetActive(true);
                     string playerName = part.pv.Controller.NickName;
                     Decklist.Instance.characterNames.TryGetValue(part.character, out string charName);
-                    playerSelectorsChar[i].GetComponentInChildren<TextMeshProUGUI>().text = charName + "(" + playerName + ")";
+                    string nameText = charName + "(" + playerName + ")";
+                    playerSelectorsChar[i].GetComponentInChildren<TextMeshProUGUI>().text = nameText;
+                    workerDistributionPools[i + 1].gameObject.SetActive(true);
+                    workerDistributionPools[i + 1].labelText.text = nameText;
+                    jobDistributionPools[i + 1].gameObject.SetActive(true);
+                    jobDistributionPools[i + 1].labelText.text = nameText;
+                }
+                else
+                {
+                    workerDistributionPools[i + 1].gameObject.SetActive(true);
+                    jobDistributionPools[i + 1].gameObject.SetActive(true);
+                    Decklist.Instance.characterNames.TryGetValue(part.character, out string charName);
+                    workerDistributionPools[i + 1].labelText.text = charName +"(You)";
+                    jobDistributionPools[i + 1].labelText.text = charName +"(You)";
                 }
             }
         }
@@ -201,6 +306,23 @@ namespace Gameplay
                 GameMaster.Instance.characterIndex.TryGetValue(GameMaster.Character.Sheriff, out Participant part);
                 part.pv.RPC("RpcAddCoin", RpcTarget.Others, thugAmount/2);
             }
+            ResetAfterSelect();
+        }
+
+        public void ConfirmWorkerDistribution()
+        {
+            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+            {
+                // TODO implement necromancer here
+                GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RpcAddPiece", RpcTarget.All, (byte)GameMaster.PieceType.Worker, workerDistributionPools[i+1].objectsHeld.Count);
+                workerDistributionPools[i+1].DropPool();
+            }
+            ResetAfterSelect();
+        }
+
+        public void ConfirmJobDistribution()
+        {
+            // TODO implement this
             ResetAfterSelect();
         }
 

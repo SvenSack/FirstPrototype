@@ -204,7 +204,10 @@
             <e p="CoinHover.cs" t="Include" />
             <e p="CursorFollower.cs" t="Include" />
             <e p="Decklist.cs" t="Include" />
+            <e p="DistributionPieceUI.cs" t="Include" />
+            <e p="DistributionPool.cs" t="Include" />
             <e p="GameMaster.cs" t="Include" />
+            <e p="JobPieceUI.cs" t="Include" />
             <e p="Participant.cs" t="Include" />
             <e p="PayAssignment.cs" t="Include" />
             <e p="Piece.cs" t="Include" />
