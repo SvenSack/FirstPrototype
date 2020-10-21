@@ -54,13 +54,13 @@ namespace Gameplay
                 {GameMaster.Action.ExecuteAHeist, new ActionCard("Execute a Heist", "You and any number of other characters of your choice each gain 3 coins.", actionSprites[5])},
                 {GameMaster.Action.RunForOffice, new ActionCard("Run for Office", "Pay any amount of coins. Unless the Leader pays more at the end of this turn, you become Leader instead, they remain in the game without a role card.", actionSprites[6])},
                 {GameMaster.Action.SwearTheOaths, new ActionCard("Swear the Oaths", "Take 2 Assassins and add them to your character pool. You may immediately use them on this turn.", actionSprites[7])},
-                {GameMaster.Action.BribeTheTaxOfficer, new ActionCard("Bribe the Tax Officer", "All other characters must give you 2 coins or an artifact. If they cannot, they must reveal their character pool to prove it.", actionSprites[8])},
+                {GameMaster.Action.BribeTheTaxOfficer, new ActionCard("Bribe the Tax Officer", "All other characters must give you 2 coins. If they cannot, they must reveal their character pool to prove it.", actionSprites[8])},
                 {GameMaster.Action.DealWithItYourself, new ActionCard("Deal with it Yourself", "Discard any one open threat card, and all things placed on it. You lose 1 HP.", actionSprites[9])}
             };
             artifactCards = new Dictionary<GameMaster.Artifact, ArtifactCard>
             {
                 {GameMaster.Artifact.Ball, new ArtifactCard("Crystal Ball", "You may look behind the screen of any one player of your choice.", artifactSprites[0], 1)},
-                {GameMaster.Artifact.Bauble, new ArtifactCard("Bauble of Shielding", "Instead of playing this card, you may discard it to negate the effect of any one artifact or action which targets you.", artifactSprites[1], 2)},
+                {GameMaster.Artifact.Bauble, new ArtifactCard("Bauble of Shielding", "Instead of playing this card, you may discard it to negate the effect of any one artifact which targets you.", artifactSprites[1], 2)},
                 {GameMaster.Artifact.Bow, new ArtifactCard("Bow of the Manhunter", "Any one character of your choice immediately discards up to 3 Assassins or Thugs.", artifactSprites[2], 4)},
                 {GameMaster.Artifact.Dagger, new ArtifactCard("Ritual Dagger", "You may immediately take and use 2 Assassins for your character pool.", artifactSprites[3], 3)},
                 {GameMaster.Artifact.Periapt, new ArtifactCard("Periapt of the Mindthief", "You may secretly look at the Role card of any one player of your choice.", artifactSprites[4], 2)},

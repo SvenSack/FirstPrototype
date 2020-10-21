@@ -16,6 +16,8 @@ namespace Gameplay
         private LayerMask tableMask;
         private int pieceLayer;
         public GameMaster.PieceType type;
+        [SerializeField] private ParticleSystem poisonParticles;
+        public bool poisoned { private set; get; }
     
         void Start()
         {
@@ -23,6 +25,10 @@ namespace Gameplay
             rb = GetComponent<Rigidbody>();
             tableMask = LayerMask.GetMask("Table");
             pieceLayer = LayerMask.NameToLayer("Pieces");
+            if (poisonParticles != null)
+            {
+                poisonParticles.Pause();
+            }
         }
 
         void Update()
@@ -95,6 +101,13 @@ namespace Gameplay
             {
                 transform.position = originBoard.pieceLocation.position + Vector3.up * .3f;
             }
+        }
+
+        [PunRPC]
+        public void ActivatePoison()
+        {
+            poisoned = true;
+            poisonParticles.Play();
         }
     }
 }

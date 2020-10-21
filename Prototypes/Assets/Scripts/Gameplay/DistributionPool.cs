@@ -23,6 +23,8 @@ namespace Gameplay
         private float width;
         private float height;
         private bool flaggedForAdjustment;
+        [SerializeField] private bool isJobPool;
+        private List<DistributionPool> activePlayerPools = new List<DistributionPool>();
     
         void Start()
         {
@@ -39,6 +41,17 @@ namespace Gameplay
 
         private void Update()
         {
+            if (isJobPool && activePlayerPools.Count == 0)
+            {
+                foreach (var pool in UIManager.Instance.jobDistributionPools)
+                {
+                    if (pool.isFlex && pool.gameObject.activeSelf)
+                    {
+                        activePlayerPools.Add(pool);
+                    }
+                }
+            }
+            
             if (flaggedForAdjustment)
             {
                 AdjustPositions();
@@ -47,9 +60,39 @@ namespace Gameplay
 
             if (confirmButton != null && objectsHeld.Count < 1)
             {
+                
                 if (!confirmButton.interactable)
                 {
                     confirmButton.interactable = true;
+                }
+                if (isJobPool)
+                {
+                    int highestValue = 0;
+                    foreach (var pool in activePlayerPools)
+                    {
+                        if (pool.objectsHeld.Count > highestValue)
+                        {
+                            highestValue = pool.objectsHeld.Count;
+                        }
+                        else if(highestValue > 1 && pool.objectsHeld.Count == 0)
+                        {
+                            confirmButton.interactable = false;
+                        }
+                    }
+
+                    DistributionPool leaderPool = UIManager.Instance.jobDistributionPools[GameMaster.Instance.FetchLeader().playerNumber + 1];
+                    if (leaderPool.objectsHeld.Count == highestValue)
+                    {
+                        if (GameMaster.Instance.FetchLeader().character == GameMaster.Character.OldFox)
+                        {
+                            // this is ok I think
+                        }
+                        else
+                        {
+                            confirmButton.interactable = false;
+                        }
+                    }
+                    // TODO add explanation hover in game UI of confirm button to make clear why this happens
                 }
             }
             else if(confirmButton != null && confirmButton.interactable)

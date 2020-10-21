@@ -7,6 +7,7 @@ namespace Gameplay
 {
     public class Card : MonoBehaviour
     {
+        public int cardIndex;
         public GameMaster.CardType cardType;
         public bool isPrivate = true;
         public TextMeshProUGUI cardName;
@@ -18,7 +19,7 @@ namespace Gameplay
         [SerializeField] private GameObject highlighter;
         [SerializeField] private Rigidbody cardBody;
         private Transform cardTransform;
-        private BoxCollider cardCollider;
+        public BoxCollider cardCollider;
         public bool showing { get; private set; }
         private Vector3 originPosition = Vector3.zero;
         private Quaternion originRotation = Quaternion.identity;

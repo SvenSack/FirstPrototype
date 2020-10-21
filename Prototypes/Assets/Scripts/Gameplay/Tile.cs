@@ -49,14 +49,20 @@ namespace Gameplay
         private void Start()
         {
             explanationHover.SetActive(false);
-            nameHover.SetActive(false);
+            if (board == null)
+            {
+                nameHover.SetActive(false);
+            }
         }
 
         private void Update()
         {
-            if (nameHover.activeSelf)
+            if (nameHover.activeSelf && board!=null)
             {
-                OrientToCamera();
+                if (board.jobHolder != null && board.jobHolder.pv.IsMine)
+                {
+                    OrientToCamera();
+                }
             }
         }
 
@@ -171,7 +177,7 @@ namespace Gameplay
                                 ToggleUsed();
                                 return true;
                             case TileType.ExecuteAHeist:
-                                GameObject piece = board.LookForPiece(GameMaster.PieceType.Thug);
+                                GameObject piece = board.LookForPiece(GameMaster.PieceType.Thug, false);
                                 if (piece != null)
                                 {
                                     PhotonNetwork.Destroy(piece);
@@ -189,7 +195,7 @@ namespace Gameplay
                             case TileType.MentorTheRookies:
                                 for (int i = 0; i < 2; i++)
                                 {
-                                    GameObject piece1 = board.LookForPiece(GameMaster.PieceType.Thug);
+                                    GameObject piece1 = board.LookForPiece(GameMaster.PieceType.Thug, true);
                                     if (piece1 != null)
                                     {
                                         PhotonNetwork.Destroy(piece1);
@@ -217,7 +223,7 @@ namespace Gameplay
                                 {
                                     for (int i = 0; i < board.pieces.Count; i++)
                                     {
-                                        GameObject piece3 = board.LookForPiece(GameMaster.PieceType.Assassin);
+                                        GameObject piece3 = board.LookForPiece(GameMaster.PieceType.Assassin, false);
                                         if (piece3 != null)
                                         {
                                             PhotonNetwork.Destroy(piece3);
@@ -283,6 +289,7 @@ namespace Gameplay
                                 else return false;
                             case TileType.SellExcessArtifacts:
                                 UIManager.Instance.StartSelection(UIManager.SelectionType.SellArtifacts, this);
+                                ToggleUsed();
                                 break;
                         }
                     }
@@ -414,7 +421,10 @@ namespace Gameplay
         private void ToggleHover(bool withExplanation)
         {
             CursorFollower.Instance.ToggleHover();
-            nameHover.SetActive(CursorFollower.Instance.IsHovering);
+            if (board == null)
+            {
+                nameHover.SetActive(CursorFollower.Instance.IsHovering);
+            }
             if (withExplanation)
             {
                 explanationHover.SetActive(CursorFollower.Instance.IsHovering);

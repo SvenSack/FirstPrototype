@@ -56,6 +56,11 @@ MonoBehaviour:
   - RpcEndTurn
   - RpcRemoveHealth
   - RpcAssignRoleAndChar
+  - ChangeJobHolder
+  - RpcRemoveCoin
+  - BaubleInquiry
+  - RpcAddHealth
+  - ActivatePoison
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

@@ -325,6 +325,7 @@ namespace Gameplay
                         parts.illustration.sprite = thisCard.illustration;
                         parts.cardName.text = thisCard.name;
                         parts.text.text = thisCard.effectText;
+                        parts.cardIndex = enumIndex;
                     }
                     else
                     {
@@ -341,6 +342,7 @@ namespace Gameplay
                         partsA.cardName.text = thisACard.name;
                         partsA.text.text = thisACard.effectText;
                         partsA.extraText1.text = "Strength: " + thisACard.weaponStrength;
+                        partsA.cardIndex = enumIndex;
                     }
                     else
                     {
@@ -400,7 +402,7 @@ namespace Gameplay
             return playerSlots[playerNumber].gameObject.GetComponent<PlayerSlot>().player;
         }
 
-        private Participant FetchPlayerByPlayer(Player player)
+        public Participant FetchPlayerByPlayer(Player player)
         {
             foreach (var slot in playerSlots)
             {

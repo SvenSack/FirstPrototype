@@ -15,6 +15,7 @@ namespace Gameplay
         public List<GameObject> pieces = new List<GameObject>();
         public PhotonView pv;
         public Participant jobHolder;
+        [SerializeField] private Tile[] tiles = new Tile[4];
 
         [SerializeField] private GameObject coinObject = null;
     
@@ -22,11 +23,25 @@ namespace Gameplay
         {
             for (int i = 0; i < amount; i++)
             {
-                coinObjects.Add(PhotonNetwork.Instantiate(coinObject.name, pieceLocation.position + new Vector3(.1f*Random.Range(-(float)coins,(float)coins), coins * .2f, .1f*Random.Range(-(float)coins,(float)coins)),
+                coinObjects.Add(PhotonNetwork.Instantiate(coinObject.name, pieceLocation.position + new Vector3(.01f*Random.Range(-(float)coins,(float)coins), coins * .2f, .01f*Random.Range(-(float)coins,(float)coins)),
                     Quaternion.identity));
                 coins++;
             }
-            
+            coinCounter.text = coins.ToString();
+        }
+
+        [PunRPC]
+        public void ChangeJobHolder(byte boardIndex)
+        {
+            Participant newHolder = GameMaster.Instance.FetchPlayerByPlayer(pv.Controller);
+            jobHolder = newHolder;
+            foreach (var tile in tiles)
+            {
+                tile.player = newHolder;
+            }
+            var transform1 = transform;
+            transform1.position = newHolder.mySlot.jobLocations[boardIndex].position;
+            transform1.rotation = newHolder.mySlot.jobLocations[boardIndex].rotation;
         }
 
         public void RemoveCoins(int amount)
@@ -37,6 +52,7 @@ namespace Gameplay
                 PhotonNetwork.Destroy(coinObjects[coinObjects.Count-1]);
                 coinObjects.RemoveAt(coinObjects.Count-1);
             }
+            coinCounter.text = coins.ToString();
         }
         
         public void AddPiece(GameMaster.PieceType type, bool setUsed)
@@ -56,14 +72,21 @@ namespace Gameplay
             pieces.Add(newPiece);
         }
 
-        public GameObject LookForPiece(GameMaster.PieceType type)
+        public GameObject LookForPiece(GameMaster.PieceType type, bool careUsed)
         {
             foreach (var element in pieces)
             {
                 Piece piece = element.GetComponent<Piece>();
-                if (piece.type == type && !piece.isUsed)
+                if (piece.type == type)
                 {
-                    return element;
+                    if (careUsed && !piece.isUsed)
+                    {
+                        return element;
+                    }
+                    else if(!careUsed)
+                    {
+                        return element;
+                    }
                 }
             }
             return null;

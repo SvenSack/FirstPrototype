@@ -197,6 +197,7 @@
         </e>
         <e p="Scripts" t="Include">
           <e p="Gameplay" t="Include">
+            <e p="AssignmentChoice.cs" t="Include" />
             <e p="AssignmentToggle.cs" t="Include" />
             <e p="Board.cs" t="Include" />
             <e p="Card.cs" t="Include" />
@@ -209,7 +210,6 @@
             <e p="GameMaster.cs" t="Include" />
             <e p="JobPieceUI.cs" t="Include" />
             <e p="Participant.cs" t="Include" />
-            <e p="PayAssignment.cs" t="Include" />
             <e p="Piece.cs" t="Include" />
             <e p="PlayerSlot.cs" t="Include" />
             <e p="Tile.cs" t="Include" />

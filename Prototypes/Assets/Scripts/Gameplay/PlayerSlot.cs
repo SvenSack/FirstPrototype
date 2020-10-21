@@ -18,6 +18,7 @@ namespace Gameplay
         public TextMeshProUGUI coinCounter;
         public Tile[] publicTiles = new Tile[5];
         public Transform hoverLocation;
+        public Transform[] jobLocations = new Transform[5];
 
         private void Awake()
         {

@@ -52,6 +52,7 @@ MonoBehaviour:
   aHand: []
   coins: 0
   hasZeal: 0
+  pieces: []
   coinObject: {fileID: 6887693000311336725, guid: e33e3fcca86522f4d975103c913f91f0,
     type: 3}
   healthObject: {fileID: 3336558165005181983, guid: f4437b598fa5a594b90fa2be3d0db35e,

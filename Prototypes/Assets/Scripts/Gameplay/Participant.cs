@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 
 namespace Gameplay
 { 
-    public class Participant : MonoBehaviourPunCallbacks
+    public class Participant : MonoBehaviourPunCallbacks, IPunObservable
     {
         public PhotonView pv;
         public PlayerSlot mySlot;
@@ -21,6 +21,7 @@ namespace Gameplay
         private List<GameObject> coinObjects = new List<GameObject>();
         private List<GameObject> healthObjects = new List<GameObject>();
         public bool hasZeal;
+        public List<GameObject> pieces = new List<GameObject>();
 
         [SerializeField] private GameObject coinObject = null;
         [SerializeField] private GameObject healthObject = null;
@@ -106,7 +107,7 @@ namespace Gameplay
         {
             for (int i = 0; i < amount; i++)
             {
-                coinObjects.Add(PhotonNetwork.Instantiate(coinObject.name, mySlot.coinLocation.position + new Vector3(.1f*Random.Range(-(float)coins,coins), coins * .2f, .1f*Random.Range(-(float)coins,(float)coins)),
+                coinObjects.Add(PhotonNetwork.Instantiate(coinObject.name, mySlot.coinLocation.position + new Vector3(.01f*Random.Range(-(float)coins,coins), coins * .2f, .01f*Random.Range(-(float)coins,(float)coins)),
                     Quaternion.identity));
                 coins++;
             }
@@ -128,7 +129,7 @@ namespace Gameplay
             int newCardIndex = GameMaster.Instance.DrawCard(type);
             GameObject newCard = GameMaster.Instance.ConstructCard(type, newCardIndex);
             int handSize = aHand.Count;
-            newCard.transform.position = mySlot.aACardLocation.position + new Vector3(.2f*handSize,.3f,.2f*handSize);
+            newCard.transform.position = mySlot.aACardLocation.position + new Vector3(.2f*handSize,.3f,0);
             newCard.transform.rotation = mySlot.aACardLocation.rotation;
             Card cardPart = newCard.GetComponent<Card>();
             cardPart.hoverLocation = mySlot.hoverLocation;
@@ -168,10 +169,31 @@ namespace Gameplay
             newPiece.GetComponent<PhotonView>().TransferOwnership(pv.Controller);
             Piece nPPiece = newPiece.GetComponent<Piece>();
             nPPiece.cam = mySlot.perspective;
+            pieces.Add(newPiece);
             if (setUsed)
             {
                 nPPiece.ToggleUse();
             }
+        }
+        
+        public GameObject LookForPiece(GameMaster.PieceType type, bool careUsed)
+        {
+            foreach (var element in pieces)
+            {
+                Piece piece = element.GetComponent<Piece>();
+                if (piece.type == type)
+                {
+                    if (careUsed && !piece.isUsed)
+                    {
+                        return element;
+                    }
+                    else if(!careUsed)
+                    {
+                        return element;
+                    }
+                }
+            }
+            return null;
         }
         
         IEnumerator PrepAndStart()
@@ -190,6 +212,15 @@ namespace Gameplay
             if (pv.IsMine)
             {
                 AddCoin(amount);
+            }
+        }
+        
+        [PunRPC]
+        public void RpcRemoveCoin(byte amount)
+        {
+            if (pv.IsMine)
+            {
+                RemoveCoins(amount);
             }
         }
 
@@ -220,6 +251,23 @@ namespace Gameplay
             if (pv.IsMine)
             {
                 RemoveHealth(amount);
+            }
+        }
+        
+        [PunRPC]
+        public void RpcAddHealth(byte amount)
+        {
+            if (pv.IsMine)
+            {
+                Decklist.Instance.characterCards.TryGetValue(character, out CharacterCard charCard);
+                if (health + amount <= charCard.health)
+                {
+                    AddHealth(amount);
+                }
+                else
+                {
+                    AddHealth(charCard.health - health);
+                }
             }
         }
 
@@ -266,6 +314,25 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void BaubleInquiry(byte inquiryIndex, byte inquiringPlayer)
+        {
+            if (pv.IsMine)
+            {
+                Participant inquirer = GameMaster.Instance.FetchPlayerByNumber(inquiringPlayer);
+                foreach (var card in aHand)
+                {
+                    if (card.cardType == GameMaster.CardType.Artifact &&
+                        card.cardIndex == (int) GameMaster.Artifact.Bauble)
+                    {
+                        UIManager.Instance.BaubleDecisionSelect((UIManager.TargetingReason) inquiryIndex, inquirer);
+                        return;
+                    }
+                }
+                UIManager.Instance.NotBaubledResults((UIManager.TargetingReason) inquiryIndex, inquirer);
+            }
+        }
+
+        [PunRPC]
         public void RpcEndTurn(bool isFirst)
         {
             if (pv.IsMine)
@@ -287,6 +354,10 @@ namespace Gameplay
                             break;
                         case GameMaster.Character.PitFighter:
                             AddPiece(GameMaster.PieceType.Thug, false);
+                            break;
+                        case GameMaster.Character.OldFox:
+                            // compare against turncounter and potentially act
+                            // TODO implement this
                             break;
                     }
                     
@@ -323,6 +394,20 @@ namespace Gameplay
                     }
                 }
                 GameMaster.Instance.turnCounter++;
+            }
+        }
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+            if (stream.IsWriting)
+            {
+                // We own this player: send the others our data
+                stream.SendNext(coins);
+            }
+            else
+            {
+                // Network player, receive data
+                coins = (int)stream.ReceiveNext();
             }
         }
     }

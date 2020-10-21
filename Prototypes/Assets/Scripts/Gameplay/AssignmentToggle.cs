@@ -7,7 +7,7 @@ namespace Gameplay
     {
         public bool isAssigned = false;
         public bool isPrivate;
-        public PayAssignment assigner;
+        public AssignmentChoice assigner;
         public Piece representative;
         [SerializeField] private GameObject jobMarker;
 
