@@ -13,11 +13,13 @@ namespace Gameplay
         public Sprite[] roleSprites = new Sprite[6];
         public Sprite[] actionSprites = new Sprite[10];
         public Sprite[] artifactSprites = new Sprite[10];
+        public Sprite[] threatSprites = new Sprite[20];
         public Dictionary<GameMaster.Character, CharacterCard> characterCards;
         public Dictionary<GameMaster.Character, string> characterNames;
         public Dictionary<GameMaster.Role, RoleCard> roleCards;
         public Dictionary<GameMaster.Artifact, ArtifactCard> artifactCards;
         public Dictionary<GameMaster.Action, ActionCard> actionCards;
+        public Dictionary<GameMaster.Threat, ThreatCard> threatCards;
 
         void Start()
         {
@@ -83,6 +85,29 @@ namespace Gameplay
                 {GameMaster.Character.OldFox, "Selene"},
                 {GameMaster.Character.PitFighter, "Ruko"}
             };
+            threatCards = new Dictionary<GameMaster.Threat, ThreatCard>
+            {
+                {GameMaster.Threat.NewKnives, new ThreatCard("New Knives are in Order", threatSprites[0], new []{0,0,0,0,0,5})},
+                {GameMaster.Threat.ZealEbbing, new ThreatCard("The Zeal is Ebbing up", threatSprites[1], new []{0,0,0,2,4,0})},
+                {GameMaster.Threat.LocalHeroes, new ThreatCard("Local Heroes on the Trail", threatSprites[2], new []{0,2,2,0,0,0})},
+                {GameMaster.Threat.ProblematicPolitician, new ThreatCard("Problematic Politician", threatSprites[3], new []{0,0,2,0,0,1})},
+                {GameMaster.Threat.BattleGuard, new ThreatCard("Battle with the Guard", threatSprites[4], new []{2,1,0,0,0,3})},
+                {GameMaster.Threat.WaningDominance, new ThreatCard("Market Dominance Waning", threatSprites[5], new []{0,0,0,0,10,2})},
+                {GameMaster.Threat.AmbitionsDoom, new ThreatCard("Ambitions of Doom", threatSprites[6], new []{0,0,0,0,0,8})},
+                {GameMaster.Threat.ProblematicMayor, new ThreatCard("Problematic Mayor", threatSprites[7], new []{2,0,2,1,0,3})},
+                {GameMaster.Threat.StoppedFearing, new ThreatCard("The People Stopped Fearing us", threatSprites[8], new []{2,0,1,0,0,0})},
+                {GameMaster.Threat.TurfWar, new ThreatCard("Turf War", threatSprites[9], new []{3,0,0,0,0,2})},
+                {GameMaster.Threat.NewSheriff, new ThreatCard("A new Sheriff in Town", threatSprites[10], new []{1,0,0,0,4,0})},
+                {GameMaster.Threat.ArtifactMaintenance, new ThreatCard("Artifact Maintenance Required", threatSprites[11], new []{2,0,0,0,15,0})},
+                {GameMaster.Threat.DraconicDemands, new ThreatCard("Draconic Demands", threatSprites[12], new []{0,2,0,0,20,0})},
+                {GameMaster.Threat.SecretCaches, new ThreatCard("Secret Caches Depleted", threatSprites[13], new []{0,0,0,0,8,0})},
+                {GameMaster.Threat.RoyalDecree, new ThreatCard("Looming Royal Decree", threatSprites[14], new []{0,4,3,0,0,5})},
+                {GameMaster.Threat.ReligiousUnrest, new ThreatCard("Religious Unrest Brewing", threatSprites[15], new []{0,0,4,0,0,1})},
+                {GameMaster.Threat.WarWatch, new ThreatCard("War with the Watch", threatSprites[16], new []{6,3,0,0,0,5})},
+                {GameMaster.Threat.CivilianUnrest, new ThreatCard("Mounting Civilian Unrest", threatSprites[17], new []{5,0,0,0,8,0})},
+                {GameMaster.Threat.ShowForce, new ThreatCard("Public Show of Force needed", threatSprites[18], new []{0,0,1,0,0,6})},
+                {GameMaster.Threat.CrimesRevealed, new ThreatCard("Crimes were Revealed", threatSprites[19], new []{0,1,0,0,0,0})},
+            };
         }
     }
 
@@ -147,6 +172,47 @@ namespace Gameplay
             effectText = _effectText;
             illustration = _illustration;
             weaponStrength = _weaponStrength;
+        }
+    }
+    
+    public class ThreatCard
+    {
+        public readonly string name;
+        public readonly string requirementText = "";
+        public readonly Sprite illustration;
+        public readonly int[] requirements = new int[6]; // thugs, thugs(D), assassins, assassins(D), coins, weaponstrength
+
+        public ThreatCard(string _name, Sprite _illustration, int[] _requirements)
+        {
+            name = _name;
+            illustration = _illustration;
+            requirements = _requirements;
+            if (requirements[0] != 0)
+            {
+                requirementText += requirements[0].ToString() + " Thugs, ";
+            }
+            if (requirements[1] != 0)
+            {
+                requirementText += requirements[1].ToString() + " Thugs(D), ";
+            }
+            if (requirements[2] != 0)
+            {
+                requirementText += requirements[2].ToString() + " Assassins, ";
+            }
+            if (requirements[3] != 0)
+            {
+                requirementText += requirements[3].ToString() + " Assassins(D), ";
+            }
+            if (requirements[4] != 0)
+            {
+                requirementText += requirements[4].ToString() + " Coins, ";
+            }
+            if (requirements[5] != 0)
+            {
+                requirementText += requirements[5].ToString() + " Weaponstrength, ";
+            }
+
+            requirementText = requirementText.Remove(requirementText.Length - 2);
         }
     }
 }

@@ -205,6 +205,7 @@
             <e p="CoinHover.cs" t="Include" />
             <e p="CursorFollower.cs" t="Include" />
             <e p="Decklist.cs" t="Include" />
+            <e p="DialUI.cs" t="Include" />
             <e p="DistributionPieceUI.cs" t="Include" />
             <e p="DistributionPool.cs" t="Include" />
             <e p="GameMaster.cs" t="Include" />
@@ -212,6 +213,9 @@
             <e p="Participant.cs" t="Include" />
             <e p="Piece.cs" t="Include" />
             <e p="PlayerSlot.cs" t="Include" />
+            <e p="Threat.cs" t="Include" />
+            <e p="ThreatAssignmentPieceUI.cs" t="Include" />
+            <e p="ThreatAssignmentPool.cs" t="Include" />
             <e p="Tile.cs" t="Include" />
             <e p="UIManager.cs" t="Include" />
           </e>

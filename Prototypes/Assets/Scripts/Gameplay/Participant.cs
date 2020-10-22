@@ -15,6 +15,7 @@ namespace Gameplay
         public GameMaster.Character character;
         public GameMaster.Role role;
         public List<Card> aHand = new List<Card>();
+        public List<Card> tHand = new List<Card>();
         public int coins = 0;
         private int health = 0;
         private TextMeshProUGUI coinCounter = null;
@@ -270,6 +271,31 @@ namespace Gameplay
                 }
             }
         }
+        
+        [PunRPC]
+        public void DrawTCard(byte cardIndex)
+        {
+            if (pv.IsMine)
+            {
+                GameObject newCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Threat, cardIndex);
+                int handSize = tHand.Count;
+                newCard.transform.position = mySlot.threatLocation.position + new Vector3(.2f*handSize,.3f,0);
+                newCard.transform.rotation = mySlot.threatLocation.rotation;
+                Card cardPart = newCard.GetComponent<Card>();
+                cardPart.hoverLocation = mySlot.hoverLocation;
+                tHand.Add(cardPart);
+            }
+        }
+
+        [PunRPC]
+        public void RpcRemoveTCard(byte handIndex)
+        {
+            if (pv.IsMine)
+            {
+                PhotonNetwork.Destroy(tHand[handIndex].pv);
+                tHand.RemoveAt(handIndex);
+            }
+        }
 
         [PunRPC]
         public void RpcAssignRoleAndChar(byte roleIndex, int charIndex)
@@ -371,11 +397,30 @@ namespace Gameplay
                         }
                     }
                 
-                    // TODO: resolve threat & threat pieces
+                    // TODO: threat pieces
                 }
                 
                 if (role == GameMaster.Role.Leader)
                 {
+                    for (var i = 0; i < tHand.Count; i++)
+                    {
+                        var card = tHand[i];
+                        if (!card.threat.Resolve())
+                        {
+                            for (int e = 0; e < GameMaster.Instance.seatsClaimed; e++)
+                            {
+                                GameMaster.Instance.FetchPlayerByNumber(e).pv.RPC("RpcRemoveHealth", RpcTarget.All, 1);
+                            }
+                        }
+                        
+                        PhotonNetwork.Destroy(card.threat.pv);
+                        for (int j = 0; j < GameMaster.Instance.seatsClaimed; j++)
+                        {
+                            GameMaster.Instance.FetchPlayerByNumber(j).pv.RPC("RpcRemoveTCard", RpcTarget.All,(byte) i);
+                        }
+                        
+                    }
+
                     switch (GameMaster.Instance.turnCounter)
                     {
                         case 0:
@@ -385,7 +430,19 @@ namespace Gameplay
                             goto case 3;
                         case 1:
                         case 3:
-                            // TODO: draw new threats
+                            int threatAmount = Mathf.CeilToInt(GameMaster.Instance.seatsClaimed / 2f);
+                            // TODO implement paladin reveal here
+                            for (int i = 0; i < threatAmount; i++)
+                            {
+                                byte newThreatIndex = (byte)GameMaster.Instance.DrawCard(GameMaster.CardType.Threat);
+                                for (int j = 0; j < GameMaster.Instance.seatsClaimed; j++)
+                                {
+                                    GameMaster.Instance.FetchPlayerByNumber(j).pv.RPC("DrawTCard", RpcTarget.All, newThreatIndex);
+                                }
+                                GameObject newThreat = PhotonNetwork.Instantiate(GameMaster.Instance.threatObject.name, Vector3.zero, Quaternion.identity);
+                                Threat nT = newThreat.GetComponent<Threat>();
+                                nT.GetComponent<PhotonView>().RPC("SetThreat", RpcTarget.All, newThreatIndex);
+                            }
                             UIManager.Instance.StartSelection(UIManager.SelectionType.WorkerAssignment, null);
                             break;
                         case 5:
@@ -401,12 +458,10 @@ namespace Gameplay
         {
             if (stream.IsWriting)
             {
-                // We own this player: send the others our data
                 stream.SendNext(coins);
             }
             else
             {
-                // Network player, receive data
                 coins = (int)stream.ReceiveNext();
             }
         }

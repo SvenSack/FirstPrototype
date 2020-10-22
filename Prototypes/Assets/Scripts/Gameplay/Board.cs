@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Photon.Pun;
 using TMPro;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Gameplay
 {
@@ -9,16 +11,16 @@ namespace Gameplay
     {
         public Transform pieceLocation;
         public int coins;
-        private TextMeshProUGUI coinCounter;
+        [SerializeField] private TextMeshProUGUI coinCounter;
         private List<GameObject> coinObjects = new List<GameObject>();
-        private List<Card> artifactHand = new List<Card>();
+        public List<Card> artifactHand = new List<Card>();
         public List<GameObject> pieces = new List<GameObject>();
         public PhotonView pv;
         public Participant jobHolder;
         [SerializeField] private Tile[] tiles = new Tile[4];
 
         [SerializeField] private GameObject coinObject = null;
-    
+
         public void AddCoin(int amount)
         {
             for (int i = 0; i < amount; i++)

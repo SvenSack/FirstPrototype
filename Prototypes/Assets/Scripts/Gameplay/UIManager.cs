@@ -21,6 +21,7 @@ namespace Gameplay
         public bool isSelectingACard;
         public bool isSelectingAPlayer;
         public bool isSelectingDistribution;
+        public bool isSelectingThreatAssignment;
         private bool isGrabbingUI;
         public SelectionType typeOfSelection;
         private TargetingReason typeOfTargeting;
@@ -34,6 +35,8 @@ namespace Gameplay
         [SerializeField] private TextMeshProUGUI cardTargetingText;
         [SerializeField] private TextMeshProUGUI baubleDecisionText;
         [SerializeField] private AssignmentChoice bowDecider;
+        public ThreatAssignmentPool[] threatAssignmentPools = new ThreatAssignmentPool[6];
+        [SerializeField] private DialUI[] threatResourceDials = new DialUI[2];
         private List<SelectionType> selectionBuffer = new List<SelectionType>();
         public DistributionPool[] workerDistributionPools = new DistributionPool[7];
         public DistributionPool[] jobDistributionPools = new DistributionPool[7];
@@ -41,6 +44,9 @@ namespace Gameplay
         private EventSystem eventSys;
         private DistributionPieceUI grabbedUI;
         private Participant inquirer;
+        private Threat targetedThreat;
+        private int threatResolutionCardTargets;
+        private int[] threatContributedValues = new int[6];
 
         public enum SelectionType
         {
@@ -56,6 +62,8 @@ namespace Gameplay
             BaubleDecision,
             SerumPopUp,
             BowTargetAssignment,
+            ThreatCardAssignment,
+            ThreatCardACardAssignment,
             
         }
 
@@ -69,15 +77,6 @@ namespace Gameplay
             Serum,
             Poison,
             Seduction
-        }
-
-        public enum BaubleInquiries
-        {
-            Ball,
-            Bow,
-            Periapt,
-            Scepter,
-            Serum
         }
     
         void Start()
@@ -131,15 +130,27 @@ namespace Gameplay
                     switch (typeOfSelection)
                     {
                         case SelectionType.ThievesGuild:
-                            SelectACardTG(CursorFollower.Instance.hoveredACard);
+                            SelectACardTG(CursorFollower.Instance.hoveredCard);
                             break;
                         case SelectionType.SellArtifacts:
-                            if (!CursorFollower.Instance.hoveredACard.isPrivate && CursorFollower.Instance.hoveredACard.cardType == GameMaster.CardType.Artifact)
+                            if (!CursorFollower.Instance.hoveredCard.isPrivate && CursorFollower.Instance.hoveredCard.cardType == GameMaster.CardType.Artifact)
                             {
-                                SelectACardSA(CursorFollower.Instance.hoveredACard);
+                                SelectACardSA(CursorFollower.Instance.hoveredCard);
                             }
                             break;
+                        case SelectionType.ThreatCardACardAssignment:
+                            if (CursorFollower.Instance.hoveredCard.cardType == GameMaster.CardType.Artifact)
+                            {
+                                SelectACardTCS(CursorFollower.Instance.hoveredCard);
+                            }
+
+                            break;
                     }
+                }
+                
+                if (!isGrabbingPiece && !isSelecting && CursorFollower.Instance.isHoveringTCard)
+                {
+                    StartSelection(SelectionType.ThreatCardAssignment, null);
                 }
 
                 if (isSelectingDistribution && !isGrabbingUI)
@@ -199,7 +210,7 @@ namespace Gameplay
             if (isSelectingACard)
             {
                 isSelectingACard = false;
-                CursorFollower.Instance.hoveredACard = null;
+                CursorFollower.Instance.hoveredCard = null;
                 CursorFollower.Instance.isHoveringACard = false;
             }
 
@@ -218,6 +229,24 @@ namespace Gameplay
                 }
                 isGrabbingUI = false;
                 grabbedUI = null;
+            }
+
+            if (isSelectingThreatAssignment)
+            {
+                foreach (var pool in threatAssignmentPools)
+                {
+                  pool.DropPool();
+                  pool.gameObject.SetActive(true);  
+                }
+
+                foreach (var dial in threatResourceDials)
+                {
+                    if (dial.gameObject.activeSelf)
+                    {
+                        dial.Reset();
+                    }
+                    dial.gameObject.SetActive(true);
+                }
             }
         }
 
@@ -238,6 +267,7 @@ namespace Gameplay
                     // Above are popup with only buttons
                     case SelectionType.ThievesGuild:
                     case SelectionType.SellArtifacts:
+                    case SelectionType.ThreatCardACardAssignment:
                         isSelectingACard = true;
                         break;
                     // Above are card selection popups
@@ -272,6 +302,13 @@ namespace Gameplay
                         }
                         break;
                     // Above are player pool assignment popups
+                    case SelectionType.ThreatCardAssignment:
+                        CreateThreatAssignmentUI();
+                        isSelectingDistribution = true;
+                        isSelectingThreatAssignment = true;
+                        targetedThreat = CursorFollower.Instance.hoveredCard.threat;
+                        break;
+                    // Above is a unique selection type with multiple functionalities
                 }
             }
             else
@@ -280,7 +317,183 @@ namespace Gameplay
             }
         }
 
-        public void CardSelectTarget(TargetingReason reason)
+        private void CreateThreatAssignmentUI()
+        {
+            int[] values = CursorFollower.Instance.hoveredCard.threat.threatValues;
+            for (int j = 0; j < 2; j++)
+            {
+                if (values[j*3] != 0 || values[j*3+1] != 0)
+                {
+                    threatAssignmentPools[j+3].PopulatePool();
+                    for (int i = 0; i < 2; i++)
+                    {
+                        if (values[i+j*3] == 0)
+                        {
+                            threatAssignmentPools[i+1+j*3].gameObject.SetActive(false);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 3+j*3; i++)
+                    {
+                        threatAssignmentPools[i].gameObject.SetActive(false);
+                    }
+                }
+            }
+            
+            if (values[4] != 0)
+            {
+                int totalCoins = participant.coins;
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins;
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins;
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins;
+                }
+                threatResourceDials[0].maxAmount = totalCoins;
+            }
+            else
+            {
+                threatResourceDials[0].gameObject.SetActive(false);
+            }
+            if (values[5] != 0)
+            {
+                int totalCards = 0;
+                foreach (var card in participant.aHand)
+                {
+                    if (card.cardType == GameMaster.CardType.Artifact)
+                    {
+                        totalCards++;
+                    }
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCards += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().artifactHand.Count;
+                }
+                threatResourceDials[1].maxAmount = totalCards;
+            }
+            else
+            {
+                threatResourceDials[1].gameObject.SetActive(false);
+            }
+        }
+
+        public void ConfirmThreatSelection()
+        {
+            threatContributedValues = new int[6];
+            for (int j = 0; j < 2; j++)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    threatContributedValues[i+j] = threatAssignmentPools[i + 1 + j * 3].objectsHeld.Count;
+                    switch (i)
+                    {
+                        case 0:
+                            foreach (var piece in threatAssignmentPools[i + 1 + j * 3].objectsHeld)
+                            {
+                               piece.representative.ToggleUse(); 
+                            }
+
+                            break;
+                        case 1:
+                            foreach (var piece in threatAssignmentPools[i + 1 + j * 3].objectsHeld)
+                            {
+                                PhotonNetwork.Destroy(piece.representative.pv);
+                            }
+
+                            break;
+                    }
+                }
+            }
+
+
+            if (threatResourceDials[0].amount != 0)
+            {
+                int owed = threatResourceDials[0].amount;
+                threatContributedValues[4] = owed;
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
+                    participant.playerNumber)
+                {
+                   Board mocB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>();
+                   if (mocB.coins >= owed)
+                   {
+                       mocB.RemoveCoins(owed);
+                       owed = 0;
+                   }
+                   else
+                   {
+                       owed -= mocB.coins;
+                       mocB.RemoveCoins(mocB.coins);
+                   }
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                    participant.playerNumber && owed != 0)
+                {
+                    Board mogB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>();
+                    if (mogB.coins >= owed)
+                    {
+                        mogB.RemoveCoins(owed);
+                        owed = 0;
+                    }
+                    else
+                    {
+                        owed -= mogB.coins;
+                        mogB.RemoveCoins(mogB.coins);
+                    }
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
+                    participant.playerNumber && owed != 0)
+                {
+                    Board moclB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>();
+                    if (moclB.coins >= owed)
+                    {
+                        moclB.RemoveCoins(owed);
+                        owed = 0;
+                    }
+                    else
+                    {
+                        owed -= moclB.coins;
+                        moclB.RemoveCoins(moclB.coins);
+                    }
+                }
+
+                if (owed != 0)
+                {
+                    participant.RemoveCoins(owed);
+                }
+            }
+
+            if (threatResourceDials[1].amount != 0)
+            {
+                threatResolutionCardTargets = threatResourceDials[1].amount;
+                ResetAfterSelect();
+                for (int i = 0; i < threatResolutionCardTargets; i++)
+                {
+                    StartSelection(SelectionType.ThreatCardACardAssignment, null);
+                }
+            }
+            else
+            {
+                ResetAfterSelect();
+                targetedThreat.pv.RPC("Contribute", RpcTarget.All, participant.playerNumber, threatContributedValues);
+                
+            }
+        }
+        
+        #region SelectionAndConfirmation
+
+        private void CardSelectTarget(TargetingReason reason)
         {
             typeOfTargeting = reason;
             string newText = "";
@@ -541,6 +754,20 @@ namespace Gameplay
             ResetAfterSelect();
             participant.AddCoin(4);
         }
+        
+        private void SelectACardTCS(Card hoveredCard)
+        {
+            Decklist.Instance.artifactCards.TryGetValue((GameMaster.Artifact) hoveredCard.cardIndex,
+                out ArtifactCard temp);
+            threatContributedValues[5] += temp.weaponStrength;
+            PhotonNetwork.Destroy(hoveredCard.GetComponent<PhotonView>());
+            threatResolutionCardTargets--;
+            if (threatResolutionCardTargets == 0)
+            {
+                targetedThreat.pv.RPC("Contribute", RpcTarget.All, participant.playerNumber, threatContributedValues);
+            }
+            ResetAfterSelect();
+        }
 
         public void ConfirmPostTurnPay()
         {
@@ -681,5 +908,7 @@ namespace Gameplay
             }
             ResetAfterSelect();
         }
+
+        #endregion
     }
 }

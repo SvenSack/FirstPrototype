@@ -61,6 +61,11 @@ MonoBehaviour:
   - BaubleInquiry
   - RpcAddHealth
   - ActivatePoison
+  - DrawTCard
+  - RemoveTCard
+  - Contribute
+  - SetThreat
+  - RpcRemoveTCard
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

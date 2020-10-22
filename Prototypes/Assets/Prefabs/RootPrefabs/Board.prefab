@@ -1275,6 +1275,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceLocation: {fileID: 5487988829381632626}
   coins: 0
+  coinCounter: {fileID: 5487988831229895623}
+  artifactHand: []
   pieces: []
   pv: {fileID: 2206254332691199547}
   jobHolder: {fileID: 0}
@@ -1305,7 +1307,6 @@ MonoBehaviour:
   OwnershipTransfer: 1
   ObservedComponents:
   - {fileID: 7331186672469375986}
-  - {fileID: 0}
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0

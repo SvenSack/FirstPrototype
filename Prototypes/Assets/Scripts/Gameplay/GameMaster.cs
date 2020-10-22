@@ -56,6 +56,19 @@ namespace Gameplay
             Artifact.Venom, Artifact.Venom, Artifact.Venom,
             Artifact.Wand, Artifact.Wand
         };
+        public List<Threat> threatDeck = new List<Threat>
+        {
+            Threat.AmbitionsDoom, Threat.ArtifactMaintenance,
+            Threat.BattleGuard, Threat.CivilianUnrest,
+            Threat.CrimesRevealed, Threat.DraconicDemands,
+            Threat.LocalHeroes, Threat.NewKnives,
+            Threat.NewSheriff, Threat.ProblematicMayor,
+            Threat.ProblematicPolitician, Threat.ReligiousUnrest,
+            Threat.RoyalDecree, Threat.SecretCaches, 
+            Threat.ShowForce, Threat.StoppedFearing,
+            Threat.TurfWar, Threat.WaningDominance,
+            Threat.WarWatch, Threat.ZealEbbing
+        };
         
         public static GameMaster Instance;
         public PhotonView[] playerSlots;
@@ -69,6 +82,7 @@ namespace Gameplay
 
         public PhotonView pv;
         [SerializeField] private GameObject participantObject = null;
+        public GameObject threatObject = null;
         [SerializeField] private GameObject[] cardPrefabs = new GameObject[5];
         [SerializeField] private GameObject[] piecePrefabs = new GameObject[3];
 
@@ -122,6 +136,30 @@ namespace Gameplay
             BribeTheTaxOfficer,
             AskForFavours,
             Improvise
+        }
+
+        public enum Threat
+        {
+            NewKnives,
+            ZealEbbing,
+            LocalHeroes,
+            ProblematicPolitician,
+            BattleGuard,
+            WaningDominance,
+            AmbitionsDoom,
+            ProblematicMayor,
+            StoppedFearing,
+            TurfWar,
+            NewSheriff,
+            ArtifactMaintenance,
+            DraconicDemands,
+            SecretCaches,
+            RoyalDecree,
+            ReligiousUnrest,
+            WarWatch,
+            CivilianUnrest,
+            ShowForce,
+            CrimesRevealed
         }
 
         public enum CardType
@@ -252,6 +290,11 @@ namespace Gameplay
                     Action returnValue4 = actionDeck[randomPick4];
                     pv.RPC("RemoveFromDeck", RpcTarget.All,(int)type, (int)returnValue4);
                     return (int)returnValue4;
+                case CardType.Threat:
+                    int randomPick5 = Random.Range(0, threatDeck.Count);
+                    Threat returnValue5 = threatDeck[randomPick5];
+                    pv.RPC("RemoveFromDeck", RpcTarget.All,(int)type, (int)returnValue5);
+                    return (int)returnValue5;
                 default: return -1;
             }
         }
@@ -302,6 +345,17 @@ namespace Gameplay
                         if (artifactDeck[i] == target4)
                         {
                             artifactDeck.RemoveAt(i);
+                            break;
+                        }
+                    }
+                    break;
+                case CardType.Threat:
+                    Threat target5 = (Threat) index;
+                    for (int i = 0; i < threatDeck.Count; i++)
+                    {
+                        if (threatDeck[i] == target5)
+                        {
+                            threatDeck.RemoveAt(i);
                             break;
                         }
                     }
@@ -379,6 +433,22 @@ namespace Gameplay
                         {
                             partsR.icon.gameObject.SetActive(false);
                         }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("PANIC");
+                    }
+                    break;
+                
+                case CardType.Threat:
+                    card = Instantiate(cardPrefabs[(int) type]);
+                    Card partsT = card.GetComponent<Card>();
+                    if (dL.threatCards.TryGetValue((Threat) enumIndex, out ThreatCard thisTCard))
+                    {
+                        partsT.cardType = type;
+                        partsT.illustration.sprite = thisTCard.illustration;
+                        partsT.cardName.text = thisTCard.name;
+                        partsT.text.text = thisTCard.requirementText;
                     }
                     else
                     {

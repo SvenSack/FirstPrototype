@@ -89,7 +89,10 @@ namespace Gameplay
                         }
                         else
                         {
-                            confirmButton.interactable = false;
+                            if (GameMaster.Instance.seatsClaimed != 1)
+                            {
+                                confirmButton.interactable = false;
+                            }
                         }
                     }
                     // TODO add explanation hover in game UI of confirm button to make clear why this happens

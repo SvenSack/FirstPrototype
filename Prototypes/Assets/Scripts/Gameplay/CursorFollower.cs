@@ -9,7 +9,8 @@ namespace Gameplay
         public Camera playerCam;
         private LayerMask tableMask;
         public bool isHoveringACard;
-        public Card hoveredACard;
+        public bool isHoveringTCard;
+        public Card hoveredCard;
         public bool active;
     
         // Start is called before the first frame update

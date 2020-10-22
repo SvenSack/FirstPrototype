@@ -1,4 +1,5 @@
 ﻿using System;
+using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +11,7 @@ namespace Gameplay
         public int cardIndex;
         public GameMaster.CardType cardType;
         public bool isPrivate = true;
+        public PhotonView pv;
         public TextMeshProUGUI cardName;
         public TextMeshProUGUI text;
         public TextMeshProUGUI extraText1;
@@ -24,9 +26,11 @@ namespace Gameplay
         private Vector3 originPosition = Vector3.zero;
         private Quaternion originRotation = Quaternion.identity;
         public Transform hoverLocation { set; private get; }
+        public Threat threat;
 
         private void Start()
         {
+            pv = GetComponent<PhotonView>();
             cardTransform = cardBody.transform;
             cardCollider = cardBody.GetComponent<BoxCollider>();
             highlighter.SetActive(false);
@@ -43,8 +47,17 @@ namespace Gameplay
             {
                 if (cardType == GameMaster.CardType.Action || cardType == GameMaster.CardType.Artifact)
                 {
-                    CursorFollower.Instance.hoveredACard = this;
+                    CursorFollower.Instance.hoveredCard = this;
                     CursorFollower.Instance.isHoveringACard = highlighter.activeSelf;
+                }
+            }
+            else
+            {
+                
+                if (cardType == GameMaster.CardType.Threat)
+                {
+                    CursorFollower.Instance.hoveredCard = this;
+                    CursorFollower.Instance.isHoveringTCard = highlighter.activeSelf;
                 }
             }
         }

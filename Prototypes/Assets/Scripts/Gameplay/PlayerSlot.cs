@@ -15,6 +15,7 @@ namespace Gameplay
         public Transform rCCardLocation;
         public Transform aACardLocation;
         public Transform pieceLocation;
+        public Transform threatLocation;
         public TextMeshProUGUI coinCounter;
         public Tile[] publicTiles = new Tile[5];
         public Transform hoverLocation;
