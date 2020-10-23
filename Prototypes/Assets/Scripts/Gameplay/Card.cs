@@ -8,6 +8,9 @@ namespace Gameplay
 {
     public class Card : MonoBehaviour
     {
+        [SerializeField] private GameObject highlighter;
+        [SerializeField] private Rigidbody cardBody;
+        
         public int cardIndex;
         public GameMaster.CardType cardType;
         public bool isPrivate = true;
@@ -18,15 +21,14 @@ namespace Gameplay
         public TextMeshProUGUI extraText2;
         public Image illustration;
         public Image icon;
-        [SerializeField] private GameObject highlighter;
-        [SerializeField] private Rigidbody cardBody;
-        private Transform cardTransform;
         public BoxCollider cardCollider;
         public bool showing { get; private set; }
-        private Vector3 originPosition = Vector3.zero;
-        private Quaternion originRotation = Quaternion.identity;
         public Transform hoverLocation { set; private get; }
         public Threat threat;
+        
+        private Transform cardTransform;
+        private Vector3 originPosition = Vector3.zero;
+        private Quaternion originRotation = Quaternion.identity;
 
         private void Start()
         {
@@ -37,7 +39,7 @@ namespace Gameplay
         }
 
         public void ToggleSelector(bool doubleCheck)
-        {
+        { // used by the UImanager to select cards
             highlighter.SetActive(!highlighter.activeSelf);
             if (doubleCheck && highlighter.activeSelf)
             {
@@ -63,7 +65,7 @@ namespace Gameplay
         }
 
         public void ToggleShowCard()
-        {
+        { // used to show cards for closer inspection
             switch (showing)
             {
                 case false:

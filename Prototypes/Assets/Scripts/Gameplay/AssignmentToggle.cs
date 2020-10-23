@@ -5,11 +5,12 @@ namespace Gameplay
 {
     public class AssignmentToggle : MonoBehaviour
     {
+        [SerializeField] private GameObject jobMarker;
+        
         public bool isAssigned = false;
         public bool isPrivate;
         public AssignmentChoice assigner;
         public Piece representative;
-        [SerializeField] private GameObject jobMarker;
 
         private void Start()
         {

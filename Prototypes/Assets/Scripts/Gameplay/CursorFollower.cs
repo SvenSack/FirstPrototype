@@ -7,20 +7,19 @@ namespace Gameplay
         public static CursorFollower Instance;
         public bool IsHovering { get; private set; }
         public Camera playerCam;
-        private LayerMask tableMask;
         public bool isHoveringACard;
         public bool isHoveringTCard;
         public Card hoveredCard;
         public bool active;
     
-        // Start is called before the first frame update
+        private LayerMask tableMask;
+        
         void Start()
         {
             tableMask = LayerMask.GetMask("Table");
             Instance = this;
         }
 
-        // Update is called once per frame
         void Update()
         {
             if (active)
@@ -30,7 +29,8 @@ namespace Gameplay
         }
 
         private void AdjustPosition()
-        {
+        { // this method is just the update functionality that lets it follow the cursor as projected onto the table surface, this object is then used for trigger collisions to get
+          // worldspace UI interactions such as with the cards and hovers
             if (Physics.Raycast(playerCam.ScreenPointToRay(Input.mousePosition), out RaycastHit tableHit, 100f, tableMask))
             {
                 Vector3 cursorTarget = tableHit.point;

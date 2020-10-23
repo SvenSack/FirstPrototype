@@ -8,21 +8,22 @@ using Random = UnityEngine.Random;
 namespace Gameplay
 {
     public class Board : MonoBehaviour
-    {
+    { // TODO this class is pretty similar to the participant, check if inheritance may be possible one way or another
+        [SerializeField] private TextMeshProUGUI coinCounter;
+        [SerializeField] private Tile[] tiles = new Tile[4];
+        [SerializeField] private GameObject coinObject = null;
+        
         public Transform pieceLocation;
         public int coins;
-        [SerializeField] private TextMeshProUGUI coinCounter;
-        private List<GameObject> coinObjects = new List<GameObject>();
         public List<Card> artifactHand = new List<Card>();
         public List<GameObject> pieces = new List<GameObject>();
         public PhotonView pv;
         public Participant jobHolder;
-        [SerializeField] private Tile[] tiles = new Tile[4];
-
-        [SerializeField] private GameObject coinObject = null;
+        
+        private List<GameObject> coinObjects = new List<GameObject>();
 
         public void AddCoin(int amount)
-        {
+        { // adds coins to this board
             for (int i = 0; i < amount; i++)
             {
                 coinObjects.Add(PhotonNetwork.Instantiate(coinObject.name, pieceLocation.position + new Vector3(.01f*Random.Range(-(float)coins,(float)coins), coins * .2f, .01f*Random.Range(-(float)coins,(float)coins)),
@@ -34,7 +35,7 @@ namespace Gameplay
 
         [PunRPC]
         public void ChangeJobHolder(byte boardIndex)
-        {
+        { // assigns a new owner to the jobboard
             Participant newHolder = GameMaster.Instance.FetchPlayerByPlayer(pv.Controller);
             jobHolder = newHolder;
             foreach (var tile in tiles)
@@ -47,7 +48,7 @@ namespace Gameplay
         }
 
         public void RemoveCoins(int amount)
-        {
+        { // removes coins from this board
             coins -= amount;
             for (int i = 0; i < amount; i++)
             {
@@ -58,7 +59,7 @@ namespace Gameplay
         }
         
         public void AddPiece(GameMaster.PieceType type, bool setUsed)
-        {
+        { // ads pieces to this board
             GameObject newPiece = GameMaster.Instance.CreatePiece(type);
             newPiece.transform.position = pieceLocation.position +
                                           new Vector3(Random.Range(-.5f, .5f), .5f, Random.Range(-.5f, .5f));
@@ -75,7 +76,7 @@ namespace Gameplay
         }
 
         public GameObject LookForPiece(GameMaster.PieceType type, bool careUsed)
-        {
+        { // looks for pieces matching criteria on this board
             foreach (var element in pieces)
             {
                 Piece piece = element.GetComponent<Piece>();
@@ -95,7 +96,7 @@ namespace Gameplay
         }
         
         public void DrawACard()
-        {
+        { // draws a card to this board
             int newCardIndex = GameMaster.Instance.DrawCard(GameMaster.CardType.Artifact);
             GameObject newCard = GameMaster.Instance.ConstructCard(GameMaster.CardType.Artifact, newCardIndex);
             newCard.transform.position = pieceLocation.position + new Vector3(.2f*artifactHand.Count,.3f,.2f*artifactHand.Count);

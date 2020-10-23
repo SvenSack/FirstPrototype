@@ -14,6 +14,7 @@ namespace Gameplay
         public Sprite[] actionSprites = new Sprite[10];
         public Sprite[] artifactSprites = new Sprite[10];
         public Sprite[] threatSprites = new Sprite[20];
+        
         public Dictionary<GameMaster.Character, CharacterCard> characterCards;
         public Dictionary<GameMaster.Character, string> characterNames;
         public Dictionary<GameMaster.Role, RoleCard> roleCards;
@@ -22,7 +23,7 @@ namespace Gameplay
         public Dictionary<GameMaster.Threat, ThreatCard> threatCards;
 
         void Start()
-        {
+        { // all this class is, is an outsourced location for the card lists and their respective properties
             Instance = this;
             characterCards = new Dictionary<GameMaster.Character, CharacterCard>
             {

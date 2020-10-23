@@ -12,6 +12,7 @@ namespace Gameplay
         public GameMaster.Threat threatType;
         public Dictionary<int, int[]> playerContributions = new Dictionary<int, int[]>();
     
+        // this class is used to have all the players individual threat cards connect to one root entity
         void Start()
         {
             pv = GetComponent<PhotonView>();
@@ -42,7 +43,7 @@ namespace Gameplay
 
         IEnumerator SetCardThreat()
         {
-            yield return new WaitForSeconds(3);
+            yield return new WaitForSeconds(1);
             foreach (var card in UIManager.Instance.participant.tHand)
             {
                 if (card.cardIndex == (int)threatType)

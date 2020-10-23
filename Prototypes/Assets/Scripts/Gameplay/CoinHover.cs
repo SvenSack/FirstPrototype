@@ -5,10 +5,10 @@ namespace Gameplay
 {
     public class CoinHover : MonoBehaviour
     {
-
-        [SerializeField] private GameObject hoverText;
-        private float hoverTime;
         [SerializeField] private float hoverTimer = 2f;
+        [SerializeField] private GameObject hoverText;
+        
+        private float hoverTime;
         private bool showing;
 
 
@@ -18,7 +18,7 @@ namespace Gameplay
         }
 
         private void OnTriggerStay(Collider other)
-        {
+        { // this and the following methods are just for my worldspace UI where I do hover toggles based on the CursorFollower
             if (other.CompareTag("CursorFollower"))
             {
                 hoverTime += Time.deltaTime;

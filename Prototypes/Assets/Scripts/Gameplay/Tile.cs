@@ -7,14 +7,15 @@ namespace Gameplay
     public class Tile : MonoBehaviour
     {
         [SerializeField] private TileType type;
-        public bool isUsed;
         [SerializeField] private GameObject nameHover;
         [SerializeField] private GameObject explanationHover;
-        public float hoverTime = 0;
         [SerializeField] private float[] hoverTimes = new float[2];
+        [SerializeField] private GameObject light;
+        
+        public bool isUsed;
+        public float hoverTime = 0;
         public Participant player;
         public Board board;
-        [SerializeField] private GameObject light;
         
 
         private enum TileType
@@ -67,7 +68,7 @@ namespace Gameplay
         }
 
         private void OrientToCamera()
-        {
+        { // used to ensure that the worldspace UI faces the player after boards are re-assigned
             nameHover.transform.LookAt(player.mySlot.perspective.transform);
             nameHover.transform.Rotate(Vector3.up, 180);
             explanationHover.transform.LookAt(player.mySlot.perspective.transform);
@@ -75,11 +76,11 @@ namespace Gameplay
         }
         
         private bool PerformTileAction(bool isThug)
-        {
+        { // this is the logic method behind the board tiles, it just compares against their type and then acts accordingly
             switch (type)
             {
                 case TileType.ThievesGuild:
-                    if (player.aHand.Count < 1)
+                    if (player.aHand.Count < 1 && (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().artifactHand.Count < 1))
                     {
                         return false;
                     }
@@ -87,7 +88,9 @@ namespace Gameplay
                     return true;
                     break;
                 case TileType.Market:
-                    if (player.coins > 0)
+                    if (player.coins > 0 || (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins > 0) ||
+                        (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins > 0) ||
+                        (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins > 0))
                     {
                         UIManager.Instance.StartSelection(UIManager.SelectionType.BlackMarket, this);
                         return true;
@@ -258,7 +261,7 @@ namespace Gameplay
                                 }
                                 else if (player.coins > 3)
                                 {
-                                    player.RemoveCoins(4);
+                                    UIManager.Instance.PayAmountOwed(4);
                                     board.DrawACard();
                                     board.DrawACard();
                                     board.DrawACard();
@@ -277,9 +280,11 @@ namespace Gameplay
                                     ToggleUsed();
                                     return true;
                                 }
-                                else if (player.coins > 3)
+                                else if (player.coins > 3 || (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins > 3) ||
+                                         (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins > 3) ||
+                                         (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber == player.playerNumber && GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins > 3))
                                 {
-                                    player.RemoveCoins(4);
+                                    UIManager.Instance.PayAmountOwed(4);
                                     board.DrawACard();
                                     player.DrawACard(GameMaster.CardType.Artifact);
                                     GiveArtifactToLeader();
@@ -305,6 +310,10 @@ namespace Gameplay
             light.SetActive(!light.activeSelf);
         }
 
+
+
+        #region Helpers
+        // this is stuff that is used regularly in the tile logic and thus was made into functions for easier viewing/less lines
         private void GiveCoinsToLeader(int amount)
         {
             if (player.Equals(GameMaster.Instance.FetchLeader()))
@@ -344,16 +353,18 @@ namespace Gameplay
                 }
                 else
                 {
-                    player.RemoveCoins(amount);
+                    UIManager.Instance.PayAmountOwed(amount);
                     GiveCoinsToLeader(amount);
                 }
             }
             else
             {
-                player.RemoveCoins(amount);
+                UIManager.Instance.PayAmountOwed(amount);
                 GiveJobCoin(amount, owningRole);
             }
         }
+
+        #endregion
 
         private void OnTriggerEnter(Collider other)
         {

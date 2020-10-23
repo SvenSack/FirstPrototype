@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Photon.Pun;
 using UnityEngine;
 using System.Collections.Generic;
@@ -9,6 +10,9 @@ namespace Gameplay
 { 
     public class Participant : MonoBehaviourPunCallbacks, IPunObservable
     {
+        [SerializeField] private GameObject coinObject = null;
+        [SerializeField] private GameObject healthObject = null;
+        
         public PhotonView pv;
         public PlayerSlot mySlot;
         public int playerNumber = -1;
@@ -17,16 +21,14 @@ namespace Gameplay
         public List<Card> aHand = new List<Card>();
         public List<Card> tHand = new List<Card>();
         public int coins = 0;
+        public bool hasZeal;
+        public List<GameObject> pieces = new List<GameObject>();
+        public List<InformationPiece> informationHand = new List<InformationPiece>();
+        
         private int health = 0;
         private TextMeshProUGUI coinCounter = null;
         private List<GameObject> coinObjects = new List<GameObject>();
         private List<GameObject> healthObjects = new List<GameObject>();
-        public bool hasZeal;
-        public List<GameObject> pieces = new List<GameObject>();
-
-        [SerializeField] private GameObject coinObject = null;
-        [SerializeField] private GameObject healthObject = null;
-
 
         private void Start()
         {
@@ -71,8 +73,10 @@ namespace Gameplay
             }
         }
 
+        #region Setup
+        // this stuff is used to set up the participant and all game start data
         private void FindSlot(bool claimSlot)
-        { // this is what gets us our player seat at the start
+        {
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
                 if (Equals(PhotonNetwork.PlayerList[i], pv.Controller))
@@ -104,6 +108,10 @@ namespace Gameplay
             UIManager.Instance.player = pv.Controller;
         }
 
+        #endregion
+
+        #region Interfacing
+        // this stuff is what other classes, mostly the tiles and UImanager, use to interface with the values of the class
         public void AddCoin(int amount)
         {
             for (int i = 0; i < amount; i++)
@@ -147,7 +155,7 @@ namespace Gameplay
             }
         }
 
-        private void RemoveHealth(int amount)
+        private void RemoveHealth(byte amount)
         {
             for (int i = 0; i < amount; i++)
             {
@@ -176,6 +184,8 @@ namespace Gameplay
                 nPPiece.ToggleUse();
             }
         }
+
+        #endregion
         
         public GameObject LookForPiece(GameMaster.PieceType type, bool careUsed)
         {
@@ -207,6 +217,8 @@ namespace Gameplay
             }
         }
 
+        #region RPC
+        // these are all the RPC functions (what gets used by photon to do remote function calls), many of them are just remote versions of the existing interface functions
         [PunRPC]
         public void RpcAddCoin(byte amount)
         {
@@ -299,7 +311,7 @@ namespace Gameplay
 
         [PunRPC]
         public void RpcAssignRoleAndChar(byte roleIndex, int charIndex)
-        {
+        { // this is a workaround for a latency related issue I had where the deck would not sync up fast enough and two clients could draw the same card
             character = (GameMaster.Character) charIndex;
             GameMaster.Instance.characterIndex.Add(character, this);
             
@@ -359,12 +371,104 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void LookBehindScreenBy(byte playerIndexOfLooker)
+        { // this could have gone somewhere else, but it references so many variables from here that it felt silly to do so
+            if (pv.IsMine)
+            {
+                string playerTurnInfo = GameMaster.Instance.turnCounter + " " + UIManager.Instance.CreateCharPlayerString(this);
+                string openingText = "In turn " + playerTurnInfo + " had: \n";
+                string headerText = "Behind the screen information: " + playerTurnInfo;
+            
+                int workerPieces = 0;
+                int thugPieces = 0;
+                int assassinPieces = 0;
+                foreach (var p in pieces)
+                {
+                    if (p != null)
+                    {
+                        Piece piece = p.GetComponent<Piece>();
+                        switch (piece.type)
+                        {
+                            case GameMaster.PieceType.Assassin:
+                                assassinPieces++;
+                                break;
+                            case GameMaster.PieceType.Thug:
+                                thugPieces++;
+                                break;
+                            case GameMaster.PieceType.Worker:
+                                workerPieces++;
+                                break;
+                        }
+                    }
+                }
+                string playerPoolInfo =
+                    workerPieces + " Workers\n" + thugPieces + " Thugs\n" + assassinPieces + " Assassins\n" + coins + " Coins\n"
+                    + aHand.Count + " Cards in their Arsenal\n" + informationHand.Count + " pieces of Information\n" + health + " remaining Health\n";
+
+                string jobInfo = "";
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber == playerNumber)
+                {
+                    Board moclBoard = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>();
+                    jobInfo += "\n They are Master of Clubs with:\n" + moclBoard.pieces.Count + " Thugs\n" +
+                               moclBoard.coins + " Coins\n";
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber == playerNumber)
+                {
+                    Board mocBoard = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>();
+                    jobInfo += "\n They are Master of Coin with:\n" + mocBoard.coins + " Coins\n";
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber == playerNumber)
+                {
+                    Board mogBoard = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>();
+                    jobInfo += "\n They are Master of Goods with:\n" + mogBoard.artifactHand.Count +
+                               " Artifacts at their disposal\n" + mogBoard.coins + " Coins\n";
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfKnives).playerNumber == playerNumber)
+                {
+                    Board mokBoard = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfKnives].GetComponent<Board>();
+                    jobInfo += "\n They are Master of Knives with:\n" + mokBoard.pieces.Count + " Assassins\n";
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfWhispers).playerNumber == playerNumber)
+                {
+                    jobInfo += "\n They are Master of Whispers with:\n" + "[REDACTED by the Master of Whispers]\n";
+                }
+            
+                string informationText = openingText + playerPoolInfo + jobInfo;
+                GameMaster.Instance.FetchPlayerByNumber(playerIndexOfLooker).pv.RPC("RpcAddEvidence", RpcTarget.Others, informationText, headerText, true, (byte) playerNumber); 
+            }
+        }
+
+        [PunRPC]
+        public void RpcAddEvidence(string content, string header, bool isEvidence, byte targetedPlayer)
+        {
+            if (pv.IsMine)
+            {
+                if (targetedPlayer != (byte) playerNumber)
+                {
+                    string realPlayerString = UIManager.Instance.CreateCharPlayerString(GameMaster.Instance.FetchPlayerByNumber(targetedPlayer));
+                    string falsePlayerString = realPlayerString.Remove(realPlayerString.IndexOf("(", StringComparison.Ordinal)+1);
+                    falsePlayerString += "You)";
+                    content = content.Replace(falsePlayerString, realPlayerString);
+                    header = header.Replace(falsePlayerString, realPlayerString);
+                }
+                informationHand.Add(new InformationPiece(content, header, isEvidence, targetedPlayer));
+            }
+        }
+
+        [PunRPC]
+        public void PassTurn(byte passingPlayerIndex)
+        {
+            GameMaster.Instance.passedPlayers[passingPlayerIndex] = true;
+        }
+
+        [PunRPC]
         public void RpcEndTurn(bool isFirst)
         {
             if (pv.IsMine)
             {
                 if (!isFirst)
                 {
+                    UIManager.Instance.turnEnded = false;
                     UIManager.Instance.StartSelection(UIManager.SelectionType.PostTurnPay, null);
 
                     switch (character)
@@ -402,23 +506,26 @@ namespace Gameplay
                 
                 if (role == GameMaster.Role.Leader)
                 {
-                    for (var i = 0; i < tHand.Count; i++)
+                    if (!isFirst)
                     {
-                        var card = tHand[i];
-                        if (!card.threat.Resolve())
+                        for (var i = 0; i < tHand.Count; i++)
                         {
-                            for (int e = 0; e < GameMaster.Instance.seatsClaimed; e++)
+                            var card = tHand[i];
+                            if (!card.threat.Resolve())
                             {
-                                GameMaster.Instance.FetchPlayerByNumber(e).pv.RPC("RpcRemoveHealth", RpcTarget.All, 1);
+                                for (int e = 0; e < GameMaster.Instance.seatsClaimed; e++)
+                                {
+                                    GameMaster.Instance.FetchPlayerByNumber(e).pv.RPC("RpcRemoveHealth", RpcTarget.All, 1);
+                                }
                             }
-                        }
                         
-                        PhotonNetwork.Destroy(card.threat.pv);
-                        for (int j = 0; j < GameMaster.Instance.seatsClaimed; j++)
-                        {
-                            GameMaster.Instance.FetchPlayerByNumber(j).pv.RPC("RpcRemoveTCard", RpcTarget.All,(byte) i);
-                        }
+                            PhotonNetwork.Destroy(card.threat.pv);
+                            for (int j = 0; j < GameMaster.Instance.seatsClaimed; j++)
+                            {
+                                GameMaster.Instance.FetchPlayerByNumber(j).pv.RPC("RpcRemoveTCard", RpcTarget.All,(byte) i);
+                            }
                         
+                        } 
                     }
 
                     switch (GameMaster.Instance.turnCounter)
@@ -453,6 +560,8 @@ namespace Gameplay
                 GameMaster.Instance.turnCounter++;
             }
         }
+
+        #endregion
 
         public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
         {

@@ -5,10 +5,11 @@ namespace Gameplay
 {
     public class CardHover : MonoBehaviour
     {
-        private Card parentCard;
         [SerializeField] private Transform stepParent;
-        private float hoverTime;
         [SerializeField] private float hoverTimer = 2f;
+        
+        private Card parentCard;
+        private float hoverTime;
         private Rigidbody stepBody;
     
         // Start is called before the first frame update
@@ -20,7 +21,7 @@ namespace Gameplay
 
         // Update is called once per frame
         void Update()
-        {
+        { // this is what I call a step parent transform. this thing follows it, but is not disabled with it as a child would be
             if (!parentCard.showing && !stepBody.IsSleeping())
             {
                 var trans = transform;
@@ -30,7 +31,8 @@ namespace Gameplay
         }
 
         private void OnTriggerEnter(Collider other)
-        {
+        { // this and the following 2 methods are all basically just trigger behaviour for the card (as is this entire class),
+          // I was too stupid to figure out how to have a separate trigger otherwise so I split it off to here
             if (other.CompareTag("CursorFollower"))
             {
                 parentCard.ToggleSelector(false);

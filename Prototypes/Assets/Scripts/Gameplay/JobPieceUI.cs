@@ -5,11 +5,15 @@ namespace Gameplay
 {
     public class JobPieceUI : DistributionPieceUI
     {
-        public GameMaster.Job representedJob;
-        [SerializeField] private GameObject explanationHover;
-        private float hoverTime;
         [SerializeField] private float hoverTimer = 2f;
+        [SerializeField] private GameObject explanationHover;
+        
+        public GameMaster.Job representedJob;
+        
+        private float hoverTime;
         private bool isHovered;
+        
+        // this class is essentially a full copy paste of the normal distributionpiece UI, I wanted to make it a better child, but too much was different except the functionality
         
         public override void Start()
         {

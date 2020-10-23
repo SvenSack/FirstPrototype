@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -9,7 +10,9 @@ using Random = UnityEngine.Random;
 namespace Gameplay
 {
     public class GameMaster : MonoBehaviourPunCallbacks
-    { 
+    {
+        #region Lists
+
         public List<Character> characterDeck = new List<Character> {
             Character.Adventurer, 
             Character.Necromancer,
@@ -69,6 +72,12 @@ namespace Gameplay
             Threat.TurfWar, Threat.WaningDominance,
             Threat.WarWatch, Threat.ZealEbbing
         };
+
+            #endregion
+        
+        [SerializeField] private GameObject[] cardPrefabs = new GameObject[5];
+        [SerializeField] private GameObject[] piecePrefabs = new GameObject[3];
+        [SerializeField] private GameObject participantObject = null;
         
         public static GameMaster Instance;
         public PhotonView[] playerSlots;
@@ -79,12 +88,11 @@ namespace Gameplay
         public List<Piece> workerPieces = new List<Piece>();
         public byte turnCounter;
         public byte seatsClaimed;
-
         public PhotonView pv;
-        [SerializeField] private GameObject participantObject = null;
         public GameObject threatObject = null;
-        [SerializeField] private GameObject[] cardPrefabs = new GameObject[5];
-        [SerializeField] private GameObject[] piecePrefabs = new GameObject[3];
+        public bool[] passedPlayers;
+
+        #region Enums
 
         public enum Character
         {
@@ -187,6 +195,8 @@ namespace Gameplay
             MasterOfGoods
         }
 
+        #endregion
+        
         private void Start()
         {
             for (int i = 0; i < 6-PhotonNetwork.CurrentRoom.PlayerCount; i++)
@@ -201,10 +211,11 @@ namespace Gameplay
             }
             PhotonNetwork.Instantiate(participantObject.name, Vector3.zero, Quaternion.identity, 0);
             CursorFollower.Instance.active = true;
+            passedPlayers = new bool[PhotonNetwork.CurrentRoom.PlayerCount];
         }
 
         IEnumerator CommenceGame()
-        {
+        { // this is used to avoid network latency interfering. I wanted to use buffered RPC calls, but their order was not guaranteed, this is a bit ugly in my opinion
             yield return new WaitUntil(StartCondition);
             Participant[] players = FindObjectsOfType<Participant>();
             foreach (var player in players)
@@ -254,10 +265,19 @@ namespace Gameplay
                     Action.DealWithItYourself, Action.DealWithItYourself
                 };
             }
+
+            if (!passedPlayers.Contains(false))
+            {
+                for (var i = 0; i < passedPlayers.Length; i++)
+                {
+                    passedPlayers[i] = false;
+                }
+                EndTurn(false);
+            }
         }
 
         public GameObject CreatePiece(PieceType type)
-        {
+        { // used by other classes to create pieces
              GameObject piece = PhotonNetwork.Instantiate(piecePrefabs[(int) type].name, transform.position, Quaternion.identity);
              if (type == PieceType.Worker)
              {
@@ -267,7 +287,7 @@ namespace Gameplay
         }
 
         public int DrawCard(CardType type)
-        {
+        {// used by other classes to draw cards from the central deck
             switch (type)
             {
                 case CardType.Character:
@@ -301,7 +321,7 @@ namespace Gameplay
 
         [PunRPC]
         public void RemoveFromDeck(int cardType, int index)
-        {
+        { // used to synchronize the deck on all clients
             switch ((CardType)cardType)
             {
                 case CardType.Character:
@@ -365,7 +385,7 @@ namespace Gameplay
         }
 
         public GameObject ConstructCard(CardType type, int enumIndex)
-        {
+        { // used by other classes to create card instances, this could be moved somewhere else maybe
             Decklist dL = Decklist.Instance;
             GameObject card = null;
             switch (type)
@@ -467,6 +487,8 @@ namespace Gameplay
             }
         }
 
+        #region Fetches
+        // all of these are helper functions for other classes to access the correct participants. this happens very often since I am using their index number when sending data via RPC
         public Participant FetchPlayerByNumber(int playerNumber)
         {
             return playerSlots[playerNumber].gameObject.GetComponent<PlayerSlot>().player;
@@ -504,5 +526,7 @@ namespace Gameplay
             return FetchPlayerByNumber(playerNumber);
         }
     }
+
+    #endregion
     
 }

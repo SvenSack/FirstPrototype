@@ -10,21 +10,6 @@ namespace Gameplay
 {
     public class UIManager : MonoBehaviour
     {
-        public static UIManager Instance;
-        public bool isGrabbingPiece;
-        private LayerMask piecesMask;
-        public Camera playerCamera;
-        public Player player;
-        public Participant participant;
-        public bool isSelecting;
-        public Tile selectingTile;
-        public bool isSelectingACard;
-        public bool isSelectingAPlayer;
-        public bool isSelectingDistribution;
-        public bool isSelectingThreatAssignment;
-        private bool isGrabbingUI;
-        public SelectionType typeOfSelection;
-        private TargetingReason typeOfTargeting;
         [SerializeField] GameObject[] SelectionPopUps = new GameObject[2];
         [SerializeField] private Transform playedCardsLocation;
         [SerializeField] private AssignmentChoice postTurnPayAssigner;
@@ -35,11 +20,30 @@ namespace Gameplay
         [SerializeField] private TextMeshProUGUI cardTargetingText;
         [SerializeField] private TextMeshProUGUI baubleDecisionText;
         [SerializeField] private AssignmentChoice bowDecider;
-        public ThreatAssignmentPool[] threatAssignmentPools = new ThreatAssignmentPool[6];
+        [SerializeField] private GameObject archiveUI;
+        [SerializeField] private ArchiveUI archive;
         [SerializeField] private DialUI[] threatResourceDials = new DialUI[2];
-        private List<SelectionType> selectionBuffer = new List<SelectionType>();
+        
+        public static UIManager Instance;
+        public bool isGrabbingPiece;
+        public Camera playerCamera;
+        public Player player;
+        public Participant participant;
+        public bool isSelecting;
+        public Tile selectingTile;
+        public bool isSelectingACard;
+        public bool isSelectingAPlayer;
+        public bool isSelectingDistribution;
+        public bool isSelectingThreatAssignment;
+        public SelectionType typeOfSelection;
+        public ThreatAssignmentPool[] threatAssignmentPools = new ThreatAssignmentPool[6];
+        public GameObject defaultUI;
         public DistributionPool[] workerDistributionPools = new DistributionPool[7];
         public DistributionPool[] jobDistributionPools = new DistributionPool[7];
+        public bool turnEnded;
+        
+        private bool isGrabbingUI;
+        private TargetingReason typeOfTargeting;
         private GraphicRaycaster gRayCaster;
         private EventSystem eventSys;
         private DistributionPieceUI grabbedUI;
@@ -47,6 +51,8 @@ namespace Gameplay
         private Threat targetedThreat;
         private int threatResolutionCardTargets;
         private int[] threatContributedValues = new int[6];
+        private LayerMask piecesMask;
+        private List<SelectionType> selectionBuffer = new List<SelectionType>();
 
         public enum SelectionType
         {
@@ -108,17 +114,20 @@ namespace Gameplay
                     jdp.gameObject.SetActive(false);
                 }
             }
+            archiveUI.SetActive(false);
         }
 
+        #region Update
+        // mostly contains stuff related to mouse inputs for interface with the worldspace UI and the cursorfollower
         void Update()
         {
-            if (!isSelecting && selectionBuffer.Count != 0)
+            if (!isSelecting && selectionBuffer.Count != 0 && !turnEnded)
             {
                 StartSelection(selectionBuffer[0], null);
                 selectionBuffer.RemoveAt(0);
             }
             
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && !turnEnded)
             {
                 if (!isGrabbingPiece && !isSelecting)
                 {
@@ -195,16 +204,21 @@ namespace Gameplay
             }
         }
 
+        #endregion
+
         private void LookForPieceGrab()
         {
             if (Physics.Raycast(playerCamera.ScreenPointToRay(Input.mousePosition), out RaycastHit pieceHit, 100f, piecesMask))
             {
-                pieceHit.transform.gameObject.GetComponent<Piece>().TryPickup(player);
+                if (pieceHit.transform.gameObject.GetComponent<Piece>().TryPickup(player))
+                {
+                    defaultUI.SetActive(false);
+                }
             }
         }
 
         private void ResetAfterSelect()
-        {
+        { // this is used by all selection types to reset to a base state after use
             SelectionPopUps[(int)typeOfSelection].SetActive(false);
             isSelecting = false;
             if (isSelectingACard)
@@ -248,149 +262,99 @@ namespace Gameplay
                     dial.gameObject.SetActive(true);
                 }
             }
+            defaultUI.SetActive(true);
         }
 
         public void StartSelection(SelectionType type, Tile thisTile)
-        {
-            if (!isSelecting)
+        { // this is used for all selection UIs (which is the name I gave to UI which asks for a player decision)
+            if (!turnEnded)
             {
-                selectingTile = thisTile;
-                isSelecting = true;
-                SelectionPopUps[(int)type].SetActive(true);
-                typeOfSelection = type;
-                switch (type)
-                { 
-                    case SelectionType.BaubleDecision:
-                    case SelectionType.SerumPopUp:
-                    case SelectionType.BlackMarket:
-                        break;
-                    // Above are popup with only buttons
-                    case SelectionType.ThievesGuild:
-                    case SelectionType.SellArtifacts:
-                    case SelectionType.ThreatCardACardAssignment:
-                        isSelectingACard = true;
-                        break;
-                    // Above are card selection popups
-                    case SelectionType.PostTurnPay:
-                        postTurnPayAssigner.CreateToggles();
-                        break;
-                    case SelectionType.BowTargetAssignment:
-                        bowDecider.CreateToggles();
-                        break;
-                    // Above are two list assignment popups
-                    case SelectionType.Poisoner:
-                    case SelectionType.Seducer:
-                    case SelectionType.CardPlayerTargeting:
-                        isSelectingAPlayer = true;
-                        playerSelectorChar.SetActive(true);
-                        break;
-                    // Above are player selection popups with only one option allowed
-                    case SelectionType.WorkerAssignment:
-                        isSelectingDistribution = true;
-                        int workerAmount = GameMaster.Instance.turnCounter + GameMaster.Instance.seatsClaimed * 3;
-                        // TODO: add revealed mechanic paladin here
-                        for (int i = 0; i < workerAmount; i++)
-                        {
-                            workerDistributionPools[0].ChangeItem(Instantiate(workerUIPrefab, transform), true);
-                        }
-                        break;
-                    case SelectionType.JobAssignment:
-                        isSelectingDistribution = true;
-                        foreach (var t in jobSelectionUIPrefabs)
-                        {
-                            jobDistributionPools[0].ChangeItem(Instantiate(t, transform), true);
-                        }
-                        break;
-                    // Above are player pool assignment popups
-                    case SelectionType.ThreatCardAssignment:
-                        CreateThreatAssignmentUI();
-                        isSelectingDistribution = true;
-                        isSelectingThreatAssignment = true;
-                        targetedThreat = CursorFollower.Instance.hoveredCard.threat;
-                        break;
-                    // Above is a unique selection type with multiple functionalities
-                }
-            }
-            else
-            {
-                selectionBuffer.Add(type);
-            }
-        }
-
-        private void CreateThreatAssignmentUI()
-        {
-            int[] values = CursorFollower.Instance.hoveredCard.threat.threatValues;
-            for (int j = 0; j < 2; j++)
-            {
-                if (values[j*3] != 0 || values[j*3+1] != 0)
+            
+                if (!isSelecting)
                 {
-                    threatAssignmentPools[j+3].PopulatePool();
-                    for (int i = 0; i < 2; i++)
-                    {
-                        if (values[i+j*3] == 0)
-                        {
-                            threatAssignmentPools[i+1+j*3].gameObject.SetActive(false);
-                        }
+                    defaultUI.SetActive(false);
+                    selectingTile = thisTile;
+                    isSelecting = true;
+                    SelectionPopUps[(int)type].SetActive(true);
+                    typeOfSelection = type;
+                    switch (type)
+                    { 
+                        case SelectionType.BaubleDecision:
+                        case SelectionType.SerumPopUp:
+                        case SelectionType.BlackMarket:
+                            break;
+                        // Above are popup with only buttons
+                        case SelectionType.ThievesGuild:
+                        case SelectionType.SellArtifacts:
+                        case SelectionType.ThreatCardACardAssignment:
+                            isSelectingACard = true;
+                            break;
+                        // Above are card selection popups
+                        case SelectionType.PostTurnPay:
+                            postTurnPayAssigner.CreateToggles();
+                            break;
+                        case SelectionType.BowTargetAssignment:
+                            bowDecider.CreateToggles();
+                            break;
+                        // Above are two list assignment popups
+                        case SelectionType.Poisoner:
+                            typeOfTargeting = TargetingReason.Poison;
+                            goto case SelectionType.CardPlayerTargeting;
+                        case SelectionType.Seducer:
+                            typeOfTargeting = TargetingReason.Seduction;
+                            goto case SelectionType.CardPlayerTargeting;
+                        case SelectionType.CardPlayerTargeting:
+                            isSelectingAPlayer = true;
+                            playerSelectorChar.SetActive(true);
+                            break;
+                        // Above are player selection popups with only one option allowed
+                        case SelectionType.WorkerAssignment:
+                            isSelectingDistribution = true;
+                            int workerAmount = GameMaster.Instance.turnCounter + GameMaster.Instance.seatsClaimed * 3;
+                            // TODO: add revealed mechanic paladin here
+                            for (int i = 0; i < workerAmount; i++)
+                            {
+                                workerDistributionPools[0].ChangeItem(Instantiate(workerUIPrefab, transform), true);
+                            }
+                            break;
+                        case SelectionType.JobAssignment:
+                            isSelectingDistribution = true;
+                            foreach (var t in jobSelectionUIPrefabs)
+                            {
+                                jobDistributionPools[0].ChangeItem(Instantiate(t, transform), true);
+                            }
+                            break;
+                        // Above are player pool assignment popups
+                        case SelectionType.ThreatCardAssignment:
+                            CreateThreatAssignmentUI();
+                            isSelectingDistribution = true;
+                            isSelectingThreatAssignment = true;
+                            threatContributedValues = new int[6];
+                            targetedThreat = CursorFollower.Instance.hoveredCard.threat;
+                            break;
+                        // Above is a unique selection type with multiple functionalities
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < 3+j*3; i++)
-                    {
-                        threatAssignmentPools[i].gameObject.SetActive(false);
-                    }
-                }
-            }
-            
-            if (values[4] != 0)
-            {
-                int totalCoins = participant.coins;
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
-                    participant.playerNumber)
-                {
-                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins;
-                }
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
-                    participant.playerNumber)
-                {
-                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins;
-                }
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
-                    participant.playerNumber)
-                {
-                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins;
-                }
-                threatResourceDials[0].maxAmount = totalCoins;
-            }
-            else
-            {
-                threatResourceDials[0].gameObject.SetActive(false);
-            }
-            if (values[5] != 0)
-            {
-                int totalCards = 0;
-                foreach (var card in participant.aHand)
-                {
-                    if (card.cardType == GameMaster.CardType.Artifact)
-                    {
-                        totalCards++;
-                    }
-                }
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
-                    participant.playerNumber)
-                {
-                    totalCards += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().artifactHand.Count;
-                }
-                threatResourceDials[1].maxAmount = totalCards;
-            }
-            else
-            {
-                threatResourceDials[1].gameObject.SetActive(false);
+                    selectionBuffer.Add(type);
+                }    
             }
         }
 
-        public void ConfirmThreatSelection()
+        #region ButtonMethods
+        // these are all methods used by buttons
+        public void EndTurn()
         {
+            if (!turnEnded)
+            {
+                turnEnded = true;
+                participant.pv.RPC("PassTurn", RpcTarget.MasterClient, (byte)participant.playerNumber);
+            }
+        }
+        
+        public void ConfirmThreatSelection()
+        { // confirms the threat assignment UI and passes values accordingly
             threatContributedValues = new int[6];
             for (int j = 0; j < 2; j++)
             {
@@ -402,7 +366,7 @@ namespace Gameplay
                         case 0:
                             foreach (var piece in threatAssignmentPools[i + 1 + j * 3].objectsHeld)
                             {
-                               piece.representative.ToggleUse(); 
+                                piece.representative.ToggleUse(); 
                             }
 
                             break;
@@ -416,62 +380,12 @@ namespace Gameplay
                     }
                 }
             }
-
-
+            
             if (threatResourceDials[0].amount != 0)
             {
                 int owed = threatResourceDials[0].amount;
                 threatContributedValues[4] = owed;
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
-                    participant.playerNumber)
-                {
-                   Board mocB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>();
-                   if (mocB.coins >= owed)
-                   {
-                       mocB.RemoveCoins(owed);
-                       owed = 0;
-                   }
-                   else
-                   {
-                       owed -= mocB.coins;
-                       mocB.RemoveCoins(mocB.coins);
-                   }
-                }
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
-                    participant.playerNumber && owed != 0)
-                {
-                    Board mogB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>();
-                    if (mogB.coins >= owed)
-                    {
-                        mogB.RemoveCoins(owed);
-                        owed = 0;
-                    }
-                    else
-                    {
-                        owed -= mogB.coins;
-                        mogB.RemoveCoins(mogB.coins);
-                    }
-                }
-                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
-                    participant.playerNumber && owed != 0)
-                {
-                    Board moclB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>();
-                    if (moclB.coins >= owed)
-                    {
-                        moclB.RemoveCoins(owed);
-                        owed = 0;
-                    }
-                    else
-                    {
-                        owed -= moclB.coins;
-                        moclB.RemoveCoins(moclB.coins);
-                    }
-                }
-
-                if (owed != 0)
-                {
-                    participant.RemoveCoins(owed);
-                }
+                PayAmountOwed(owed);
             }
 
             if (threatResourceDials[1].amount != 0)
@@ -487,100 +401,11 @@ namespace Gameplay
             {
                 ResetAfterSelect();
                 targetedThreat.pv.RPC("Contribute", RpcTarget.All, participant.playerNumber, threatContributedValues);
-                
             }
-        }
-        
-        #region SelectionAndConfirmation
-
-        private void CardSelectTarget(TargetingReason reason)
-        {
-            typeOfTargeting = reason;
-            string newText = "";
-            switch (reason)
-            {
-                case TargetingReason.Ball:
-                    newText = "Select who to spy on";
-                    break;
-                case TargetingReason.Bow:
-                    newText = "Select whose henchmen you want to hunt";
-                    break;
-                case TargetingReason.Periapt:
-                    newText = "Select whose mind to read";
-                    break;
-                case TargetingReason.Potion:
-                    newText = "Select who to heal";
-                    break;
-                case TargetingReason.Scepter:
-                    newText = "Select who to strike with lightning";
-                    break;
-                case TargetingReason.Serum:
-                    newText = "Select who to interrogate";
-                    break;
-            }
-            cardTargetingText.text = newText;
-            StartSelection(SelectionType.CardPlayerTargeting, null);
-        }
-        
-        public void BaubleDecisionSelect(TargetingReason reason, Participant _inquirer)
-        {
-            typeOfTargeting = reason;
-            string newText = CreateCharPlayerString(_inquirer);
-            switch (reason)
-            {
-                case TargetingReason.Ball:
-                    newText += " wants to spy on you,";
-                    break;
-                case TargetingReason.Bow:
-                    newText += " wants to hunt your men,";
-                    break;
-                case TargetingReason.Periapt:
-                    newText += " wants to read your mind and find out what your role is,";
-                    break;
-                case TargetingReason.Scepter:
-                    newText += " wants to strike you with lightning,";
-                    break;
-                case TargetingReason.Serum:
-                    newText += " wants to interrogate you,";
-                    break;
-            }
-            baubleDecisionText.text = newText +  " do you want to use your Bauble of Shielding to block it ?";
-            inquirer = _inquirer;
-            StartSelection(SelectionType.BaubleDecision, null);
-        }
-
-        public void UpdateSelectionNames()
-        {
-            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
-            {
-                Participant part = GameMaster.Instance.FetchPlayerByNumber(i);
-                playerSelectorsChar[i].SetActive(true);
-                string nameText = CreateCharPlayerString(part);
-                playerSelectorsChar[i].GetComponentInChildren<TextMeshProUGUI>().text = nameText;
-                workerDistributionPools[i + 1].gameObject.SetActive(true);
-                workerDistributionPools[i + 1].labelText.text = nameText;
-                jobDistributionPools[i + 1].gameObject.SetActive(true);
-                jobDistributionPools[i + 1].labelText.text = nameText;
-            }
-        }
-
-        private string CreateCharPlayerString(Participant player)
-        {
-            string playerName = "";
-            if (player.pv.IsMine)
-            {
-                playerName = "You";
-            }
-            else
-            {
-                playerName = player.pv.Controller.NickName;
-            }
-            Decklist.Instance.characterNames.TryGetValue(player.character, out string charName);
-            return charName + "(" + playerName + ")";
         }
 
         public void SelectACardBM(bool isAction)
-        {
+        { // this confirms the black market selection UI
             if (isAction)
             {
                 selectingTile.GiveCoinToOwner(1, GameMaster.Job.MasterOfWhispers);
@@ -594,10 +419,9 @@ namespace Gameplay
 
             ResetAfterSelect();
         }
-
+        
         private void SelectACardTG(Card hoveredCard)
-        {
-            // TODO implement effects here
+        { // this plays action and artifact cards (so it contains a lot of logic for them)
             switch (hoveredCard.cardType)
             {
                 case GameMaster.CardType.Artifact:
@@ -724,7 +548,7 @@ namespace Gameplay
                                     }
                                     else
                                     {
-                                        // TODO add this once info is in
+                                        target.pv.RPC("LookBehindScreenBy", RpcTarget.Others,(byte) participant.playerNumber);
                                     }
                                 }
                             }
@@ -737,26 +561,11 @@ namespace Gameplay
                     }
                     break;
             }
-            
-        }
-
-        private void PlayCard(Card card)
-        {
-            card.transform.position = playedCardsLocation.position + Vector3.up * .5f;
-            participant.aHand.Remove(card);
-            card.cardCollider.enabled = false;
-            ResetAfterSelect();
-        }
-
-        private void SelectACardSA(Card hoveredCard)
-        {
-            PhotonNetwork.Destroy(hoveredCard.GetComponent<PhotonView>());
-            ResetAfterSelect();
-            participant.AddCoin(4);
         }
         
         private void SelectACardTCS(Card hoveredCard)
-        {
+        { // this is a helper selection for the threat contribution UI. I could not come up with a better easy to implement version for contributing cards (could however make
+          // a better one based on the job assignment toggle system, but that would be more work than needed at this point
             Decklist.Instance.artifactCards.TryGetValue((GameMaster.Artifact) hoveredCard.cardIndex,
                 out ArtifactCard temp);
             threatContributedValues[5] += temp.weaponStrength;
@@ -770,8 +579,8 @@ namespace Gameplay
         }
 
         public void ConfirmPostTurnPay()
-        {
-            participant.RemoveCoins(postTurnPayAssigner.TallyAndClean(out int thugAmount));
+        { // this is the confirm button for the post turn payment popup
+            PayAmountOwed(postTurnPayAssigner.TallyAndClean(out int thugAmount));
             if (GameMaster.Instance.characterIndex.ContainsKey(GameMaster.Character.Sheriff))
             {
                 GameMaster.Instance.characterIndex.TryGetValue(GameMaster.Character.Sheriff, out Participant part);
@@ -781,7 +590,7 @@ namespace Gameplay
         }
 
         public void ConfirmWorkerDistribution()
-        {
+        { // this is the confirm button for the leader-worker distribution popup
             for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
             {
                 int amount = workerDistributionPools[i + 1].objectsHeld.Count;
@@ -796,7 +605,7 @@ namespace Gameplay
         }
 
         public void ConfirmJobDistribution()
-        {
+        { // this is the confirm button for the leader-job distribution popup
             for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
                 Participant target = GameMaster.Instance.FetchPlayerByNumber(i);
@@ -812,45 +621,30 @@ namespace Gameplay
             
             ResetAfterSelect();
         }
-
-        public void NotBaubledResults(TargetingReason typeOfInquiry, Participant inquiringPlayer)
-        { // fast track version
-            switch (typeOfInquiry)
-            {
-                case TargetingReason.Ball:
-                    // TODO rpc the lookbehindscreen or the information producing effect it creates
-                    break;
-                case TargetingReason.Bow:
-                    StartSelection(SelectionType.BowTargetAssignment, null);
-                    break;
-                case TargetingReason.Periapt:
-                    // TODO add once info is in
-                    break;
-                case TargetingReason.Scepter:
-                    participant.RpcRemoveHealth(3);
-                    break;
-                case TargetingReason.Serum:
-                    StartSelection(SelectionType.SerumPopUp, null);
-                    break;
-            }
+        
+        private void SelectACardSA(Card hoveredCard)
+        { // this is a UI for the selling function of the MoG board
+            PhotonNetwork.Destroy(hoveredCard.GetComponent<PhotonView>());
+            ResetAfterSelect();
+            participant.AddCoin(4);
         }
-
+        
         public void ConfirmBowChoice()
-        {
+        { // this is used to confirm the bow choice decision (what you get when someone uses the bow card on you)
             if (bowDecider.Clean())
             {
-                // this is the nice state
+                // this is the nice state where we need nothing extra
             }
             else
             {
-                // TODO once info is in, give the inquirer lookbehindscreen
+                participant.LookBehindScreenBy((byte)inquirer.playerNumber);
             }
             ResetAfterSelect();
             
         }
 
         public void ConfirmBaubleChoice(bool decision)
-        {
+        { // this is the popup for the bauble decision, which you get when being targeted by something which is blockable by bauble
             if (decision)
             {
                 for (var i = 0; i < participant.aHand.Count; i++)
@@ -869,18 +663,26 @@ namespace Gameplay
             }
         }
 
+        public void ToggleArchive()
+        { // this toggles the archive view
+            if (!archiveUI.activeSelf)
+            {
+                archive.PopulateArchive(participant.informationHand);
+            }
+            else
+            {
+                archive.DropArchive();
+            }
+            archiveUI.SetActive(!archiveUI.activeSelf);
+        }
+
         public void ClosePopup()
-        {
+        { // this could be used generally, atm is only used for the information popup for the serum card
             ResetAfterSelect();
         }
 
-        private void LookBehindScreen(Participant target)
-        {
-            // TODO: implement this once info is in
-        }
-
         public void ConfirmCharSelection()
-        {
+        { // this is used for them multipurpose UI for selecting a character
             for (int i = 0; i < playerSelectorsChar.Length; i++)
             {
                 if (playerSelectorsChar[i].activeSelf)
@@ -891,10 +693,10 @@ namespace Gameplay
                         switch (typeOfTargeting)
                         {
                             case TargetingReason.Poison:
-                                target.pv.RPC("RpcRemoveHealth", RpcTarget.Others, 1);
+                                target.pv.RPC("RpcRemoveHealth", RpcTarget.All, (byte)1);
                                 break;
                             case TargetingReason.Seduction:
-                                LookBehindScreen(target);
+                                target.pv.RPC("LookBehindScreenBy", RpcTarget.All,(byte) participant.playerNumber);
                                 break;
                             case TargetingReason.Potion:
                                 target.pv.RPC("RpcAddHealth", RpcTarget.All, 2);
@@ -908,7 +710,273 @@ namespace Gameplay
             }
             ResetAfterSelect();
         }
+        
+        #endregion
+
+        #region Helpers
+        // these are methods that help to create certain UI, all are called from within the button methods or within the start of the selection
+        private void CreateThreatAssignmentUI()
+        { // this creates a fitting UI piece for the threat which was selected
+            int[] values = CursorFollower.Instance.hoveredCard.threat.threatValues;
+            for (int j = 0; j < 2; j++)
+            {
+                if (values[j*3] != 0 || values[j*3+1] != 0)
+                {
+                    threatAssignmentPools[j+3].PopulatePool();
+                    for (int i = 0; i < 2; i++)
+                    {
+                        if (values[i+j*3] == 0)
+                        {
+                            threatAssignmentPools[i+1+j*3].gameObject.SetActive(false);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 3+j*3; i++)
+                    {
+                        threatAssignmentPools[i].gameObject.SetActive(false);
+                    }
+                }
+            }
+            if (values[4] != 0)
+            {
+                int totalCoins = participant.coins;
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins;
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins;
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins;
+                }
+                threatResourceDials[0].maxAmount = totalCoins;
+            }
+            else
+            {
+                threatResourceDials[0].gameObject.SetActive(false);
+            }
+            if (values[5] != 0)
+            {
+                int totalCards = 0;
+                foreach (var card in participant.aHand)
+                {
+                    if (card.cardType == GameMaster.CardType.Artifact)
+                    {
+                        totalCards++;
+                    }
+                }
+                if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                    participant.playerNumber)
+                {
+                    totalCards += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().artifactHand.Count;
+                }
+                threatResourceDials[1].maxAmount = totalCards;
+            }
+            else
+            {
+                threatResourceDials[1].gameObject.SetActive(false);
+            }
+        }
+        
+        private void CardSelectTarget(TargetingReason reason)
+        { // this handles targeting player for certain cards
+            typeOfTargeting = reason;
+            string newText = "";
+            switch (reason)
+            {
+                case TargetingReason.Ball:
+                    newText = "Select who to spy on";
+                    break;
+                case TargetingReason.Bow:
+                    newText = "Select whose henchmen you want to hunt";
+                    break;
+                case TargetingReason.Periapt:
+                    newText = "Select whose mind to read";
+                    break;
+                case TargetingReason.Potion:
+                    newText = "Select who to heal";
+                    break;
+                case TargetingReason.Scepter:
+                    newText = "Select who to strike with lightning";
+                    break;
+                case TargetingReason.Serum:
+                    newText = "Select who to interrogate";
+                    break;
+            }
+            cardTargetingText.text = newText;
+            StartSelection(SelectionType.CardPlayerTargeting, null);
+        }
+
+        public void PayAmountOwed(int owed)
+        { // this allows players to pay from any pool they own
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
+                participant.playerNumber)
+            {
+                Board mocB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>();
+                if (mocB.coins >= owed)
+                {
+                    mocB.RemoveCoins(owed);
+                    owed = 0;
+                }
+                else
+                {
+                    owed -= mocB.coins;
+                    mocB.RemoveCoins(mocB.coins);
+                }
+            }
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                participant.playerNumber && owed != 0)
+            {
+                Board mogB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>();
+                if (mogB.coins >= owed)
+                {
+                    mogB.RemoveCoins(owed);
+                    owed = 0;
+                }
+                else
+                {
+                    owed -= mogB.coins;
+                    mogB.RemoveCoins(mogB.coins);
+                }
+            }
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
+                participant.playerNumber && owed != 0)
+            {
+                Board moclB = GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>();
+                if (moclB.coins >= owed)
+                {
+                    moclB.RemoveCoins(owed);
+                    owed = 0;
+                }
+                else
+                {
+                    owed -= moclB.coins;
+                    moclB.RemoveCoins(moclB.coins);
+                }
+            }
+
+            if (owed != 0)
+            {
+                participant.RemoveCoins(owed);
+            }
+        }
+        
+        
+        public void BaubleDecisionSelect(TargetingReason reason, Participant _inquirer)
+        { // this creates the right UI for the bauble decision
+            typeOfTargeting = reason;
+            string newText = CreateCharPlayerString(_inquirer);
+            switch (reason)
+            {
+                case TargetingReason.Ball:
+                    newText += " wants to spy on you,";
+                    break;
+                case TargetingReason.Bow:
+                    newText += " wants to hunt your men,";
+                    break;
+                case TargetingReason.Periapt:
+                    newText += " wants to read your mind and find out what your role is,";
+                    break;
+                case TargetingReason.Scepter:
+                    newText += " wants to strike you with lightning,";
+                    break;
+                case TargetingReason.Serum:
+                    newText += " wants to interrogate you,";
+                    break;
+            }
+            baubleDecisionText.text = newText +  " do you want to use your Bauble of Shielding to block it ?";
+            inquirer = _inquirer;
+            StartSelection(SelectionType.BaubleDecision, null);
+        }
+
+        public void UpdateSelectionNames()
+        { // this is used once to create the player select buttons
+            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+            {
+                Participant part = GameMaster.Instance.FetchPlayerByNumber(i);
+                playerSelectorsChar[i].SetActive(true);
+                string nameText = CreateCharPlayerString(part);
+                playerSelectorsChar[i].GetComponentInChildren<TextMeshProUGUI>().text = nameText;
+                workerDistributionPools[i + 1].gameObject.SetActive(true);
+                workerDistributionPools[i + 1].labelText.text = nameText;
+                jobDistributionPools[i + 1].gameObject.SetActive(true);
+                jobDistributionPools[i + 1].labelText.text = nameText;
+            }
+        }
+
+        public string CreateCharPlayerString(Participant player)
+        { // this is used for all UI which mentions a player, it returns a string like "CharacterName(PlayerNickname)"
+            string playerName = "";
+            if (player.pv.IsMine)
+            {
+                playerName = "You";
+            }
+            else
+            {
+                playerName = player.pv.Controller.NickName;
+            }
+            Decklist.Instance.characterNames.TryGetValue(player.character, out string charName);
+            return charName + "(" + playerName + ")";
+        }
+        
+        private void PlayCard(Card card)
+        { // the generic method to use up cards which were played
+            card.transform.position = playedCardsLocation.position + Vector3.up * .5f;
+            participant.aHand.Remove(card);
+            card.cardCollider.enabled = false;
+            ResetAfterSelect();
+        }
+
+        public void NotBaubledResults(TargetingReason typeOfInquiry, Participant inquiringPlayer)
+        { // this is the logic for the things affected by the bauble
+            switch (typeOfInquiry)
+            {
+                case TargetingReason.Ball:
+                    participant.LookBehindScreenBy((byte)inquiringPlayer.playerNumber);
+                    break;
+                case TargetingReason.Bow:
+                    StartSelection(SelectionType.BowTargetAssignment, null);
+                    break;
+                case TargetingReason.Periapt:
+                    string playerCharName = CreateCharPlayerString(participant);
+                    Decklist.Instance.roleCards.TryGetValue(participant.role, out RoleCard roleCard);
+                    string content = playerCharName + " is " + roleCard.name;
+                    string header = "The role of " + playerCharName;
+                    inquiringPlayer.pv.RPC("RpcAddEvidence", RpcTarget.Others, content, header, true, (byte)participant.playerNumber);
+                    break;
+                case TargetingReason.Scepter:
+                    participant.RpcRemoveHealth(3);
+                    break;
+                case TargetingReason.Serum:
+                    StartSelection(SelectionType.SerumPopUp, null);
+                    break;
+            }
+        }
 
         #endregion
+    }
+}
+
+public class InformationPiece
+{
+    public string header;
+    public string content;
+    public bool isEvidence;
+    public int evidenceTargetIndex;
+
+    public InformationPiece(string _content, string _header, bool _isEvidence, int _evidenceTargetIndex)
+    {
+        content = _content;
+        header = _header;
+        isEvidence = _isEvidence;
+        evidenceTargetIndex = _evidenceTargetIndex;
     }
 }

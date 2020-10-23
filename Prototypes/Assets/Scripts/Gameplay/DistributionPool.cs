@@ -8,23 +8,25 @@ namespace Gameplay
 {
     public class DistributionPool : MonoBehaviour
     {
-        public List<DistributionPieceUI> objectsHeld = new List<DistributionPieceUI>();
-        public bool isFlex;
         [SerializeField] private float rowSize;
         [SerializeField] private float columnSize;
-        private float originalRowSize;
-        private float originalColumSize;
         [SerializeField] private int columns;
-        private int originalColumns;
         [SerializeField] private int rows;
         [SerializeField] private Vector2 firstPostion;
         [SerializeField] private Button confirmButton;
+        [SerializeField] private bool isJobPool;
+        
+        public List<DistributionPieceUI> objectsHeld = new List<DistributionPieceUI>();
+        public bool isFlex;
         public TextMeshProUGUI labelText;
+        
         private float width;
         private float height;
         private bool flaggedForAdjustment;
-        [SerializeField] private bool isJobPool;
         private List<DistributionPool> activePlayerPools = new List<DistributionPool>();
+        private float originalRowSize;
+        private float originalColumSize;
+        private int originalColumns;
     
         void Start()
         {
@@ -53,7 +55,7 @@ namespace Gameplay
             }
             
             if (flaggedForAdjustment)
-            {
+            { // this is done to avoid unneeded updates to positions while other stuff happens. we only need to change it before a frame
                 AdjustPositions();
                 flaggedForAdjustment = false;
             }
@@ -105,7 +107,7 @@ namespace Gameplay
         }
 
         public void ChangeItem(GameObject item, bool isAdded)
-        {
+        { // this is what actually drops the item into pools
             DistributionPieceUI wPUI = item.GetComponent<DistributionPieceUI>();
             if (isAdded)
             {
@@ -155,7 +157,7 @@ namespace Gameplay
         }
 
         public void DropPool()
-        {
+        { // this is used by the UImanager to reset the pools
             foreach (var obj in objectsHeld)
             {
                 Destroy(obj.gameObject);
@@ -164,7 +166,7 @@ namespace Gameplay
         }
         
         private void AdjustPositions()
-        {
+        { // this places objects correctly to avoid gaps
             for (int i = 0; i < objectsHeld.Count; i++)
             {
                 int row = Mathf.FloorToInt(i / (float)columns);

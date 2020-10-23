@@ -6,15 +6,16 @@ namespace Gameplay
 {
     public class DialUI : MonoBehaviour
     {
-        public int amount;
         [SerializeField] private TextMeshProUGUI text;
         [SerializeField] private Button[] buttons = new Button[2];
+        
+        public int amount;
         public int maxAmount;
 
     
     
         public void Change(bool isIncrease)
-        {
+        { // this class is just to create a UI dial (two buttons which affect the same value with + & - including visualization)
             if (isIncrease)
             {
                 amount++;

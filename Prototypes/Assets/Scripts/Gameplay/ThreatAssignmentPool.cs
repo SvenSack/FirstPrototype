@@ -8,22 +8,26 @@ namespace Gameplay
 {
     public class ThreatAssignmentPool : MonoBehaviour
     {
-        public List<ThreatAssignmentPieceUI> objectsHeld = new List<ThreatAssignmentPieceUI>();
-        public bool isFlex;
-        [SerializeField] private float rowSize;
-        [SerializeField] private float columnSize;
-        private float originalRowSize;
-        private float originalColumSize;
-        [SerializeField] private int columns;
-        private int originalColumns;
         [SerializeField] private int rows;
         [SerializeField] private Vector2 firstPostion;
+        [SerializeField] private float rowSize;
+        [SerializeField] private float columnSize;
+        [SerializeField] private int columns;
+        [SerializeField] private GameObject populationPiecePrefab;
+        
+        public List<ThreatAssignmentPieceUI> objectsHeld = new List<ThreatAssignmentPieceUI>();
+        public bool isFlex;
+        public GameMaster.PieceType acceptedPieces;
+        
+        private float originalRowSize;
+        private float originalColumSize;
+        private int originalColumns;
         private float width;
         private float height;
         private bool flaggedForAdjustment;
-        public GameMaster.PieceType acceptedPieces;
-        [SerializeField] private GameObject populationPiecePrefab;
     
+        // this class is basically a copy paste of the normal distributionpools, I wanted to make it a child, but it had too little in common to be feasible that way (which sounds
+        // like I planned poorly when writing those...
         void Start()
         {
             if (isFlex)

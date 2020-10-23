@@ -6,6 +6,7 @@ namespace Gameplay
 {
     public class Piece : MonoBehaviour
     {
+        [SerializeField] private ParticleSystem poisonParticles;
         public bool isUsed { get; private set; }
         public bool isPickedUp;
         public bool isPrivate = true;
@@ -13,11 +14,11 @@ namespace Gameplay
         public Rigidbody rb;
         public Camera cam;
         public Board originBoard;
+        public GameMaster.PieceType type;
+        public bool poisoned { private set; get; }
+        
         private LayerMask tableMask;
         private int pieceLayer;
-        public GameMaster.PieceType type;
-        [SerializeField] private ParticleSystem poisonParticles;
-        public bool poisoned { private set; get; }
     
         void Start()
         {
@@ -53,6 +54,7 @@ namespace Gameplay
                 {
                     Debug.Log("stopped holding");
                     ToggleSelfPickup();
+                    UIManager.Instance.defaultUI.SetActive(true);
                 } 
             }
             

@@ -197,6 +197,8 @@
         </e>
         <e p="Scripts" t="Include">
           <e p="Gameplay" t="Include">
+            <e p="ArchiveItem.cs" t="Include" />
+            <e p="ArchiveUI.cs" t="Include" />
             <e p="AssignmentChoice.cs" t="Include" />
             <e p="AssignmentToggle.cs" t="Include" />
             <e p="Board.cs" t="Include" />

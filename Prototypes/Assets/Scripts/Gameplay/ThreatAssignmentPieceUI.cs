@@ -4,10 +4,11 @@ namespace Gameplay
 {
     public class ThreatAssignmentPieceUI : DistributionPieceUI
     {
+        [SerializeField] private GameObject jobMarker;
+        
         public ThreatAssignmentPool currntPool;
         public bool isPrivate;
         public Piece representative;
-        [SerializeField] private GameObject jobMarker;
 
         public override void Start()
         {

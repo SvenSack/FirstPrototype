@@ -9,18 +9,19 @@ namespace Gameplay
 {
     public class AssignmentChoice : MonoBehaviour
     {
-        private List<AssignmentToggle> toggledOn = new List<AssignmentToggle>();
-        private List<AssignmentToggle> toggledOff = new List<AssignmentToggle>();
         [SerializeField] private TextMeshProUGUI totalText;
         [SerializeField] private Button confirmButton;
         [SerializeField] private Transform onGroup;
         [SerializeField] private Transform offGroup;
+        [SerializeField] private GameObject[] togglePrefabs;
+        
+        private List<AssignmentToggle> toggledOn = new List<AssignmentToggle>();
+        private List<AssignmentToggle> toggledOff = new List<AssignmentToggle>();
         private int total;
         private bool isPayment = true;
-        [SerializeField] private GameObject[] togglePrefabs;
 
         public void SwitchAssignment(AssignmentToggle target)
-        {
+        { // called by the assignment pieces when they toggle on/off
             int multiplier;
             if (target.isAssigned)
             {
@@ -87,7 +88,7 @@ namespace Gameplay
         }
 
         public void CreateToggles()
-        {
+        { // called by the UImanager to fill the list with Ui elements upon opening
             if (!isPayment)
             {
                 confirmButton.enabled = false;
@@ -124,7 +125,7 @@ namespace Gameplay
         }
 
         private void AdjustPositions()
-        {
+        { // called whenever one piece moves, TODO: further optimize this by only updating the ones after the changed index
             for (int i = 0; i < toggledOn.Count; i++)
             {
                 int row = Mathf.FloorToInt(i / 5f);
@@ -140,9 +141,24 @@ namespace Gameplay
         }
 
         private void UpdateTotal()
-        {
+        { // called whenever a value changes for the post turn payment, both handles the display and the possible disabling of the confirm if above max value
             totalText.text = "Total Amount: " + total;
-            int totalPlayerCoins = UIManager.Instance.participant.coins; // TODO: add the job coins here as well
+            int totalPlayerCoins = UIManager.Instance.participant.coins;
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
+                UIManager.Instance.participant.playerNumber)
+            {
+                totalPlayerCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins;
+            }
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                UIManager.Instance.participant.playerNumber)
+            {
+                totalPlayerCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins;
+            }
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
+                UIManager.Instance.participant.playerNumber)
+            {
+                totalPlayerCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins;
+            }
             if (total > totalPlayerCoins)
             {
                 confirmButton.interactable = false;
@@ -154,7 +170,7 @@ namespace Gameplay
         }
 
         public bool Clean()
-        {
+        { // called by UImanager for the job assignment and potential others that do not need a detailed tally when cleaning the UI for reuse
             bool returnvalue = toggledOff.Count == 3;
             foreach (var obj in toggledOn)
             {
@@ -171,7 +187,7 @@ namespace Gameplay
         }
 
         public int TallyAndClean(out int thugAmount)
-        {
+        { // called by UImanager to get both the total amount owed and the amount payed for thugs for the post turn payment, also cleans for reuse
             thugAmount = 0;
             foreach (var obj in toggledOn)
             {
