@@ -32,7 +32,7 @@ namespace Gameplay
             transform.parent = UIManager.Instance.workerDistributionPools[0].transform;
         }
 
-        public void Release(DistributionPool newPool)
+        public virtual void Release(DistributionPool newPool)
         {
             currentPool.ChangeItem(gameObject, false);
             if (newPool == null)

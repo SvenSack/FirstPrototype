@@ -110,6 +110,16 @@ namespace Gameplay
         {
             poisoned = true;
             poisonParticles.Play();
+            GetComponent<ThreatPiece>().damageValue = 5;
+        }
+        
+        [PunRPC]
+        public void DestroyThis()
+        {
+            if (pv.IsMine)
+            {
+                PhotonNetwork.Destroy(pv);
+            }
         }
     }
 }

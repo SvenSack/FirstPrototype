@@ -6,9 +6,11 @@ namespace Gameplay
     public class AssignmentToggle : MonoBehaviour
     {
         [SerializeField] private GameObject jobMarker;
+        [SerializeField] private GameObject poisonMarker;
         
         public bool isAssigned = false;
         public bool isPrivate;
+        public bool isPoisoned;
         public AssignmentChoice assigner;
         public Piece representative;
 
@@ -17,6 +19,11 @@ namespace Gameplay
             if (isPrivate)
             {
                 jobMarker.SetActive(false);
+            }
+
+            if (!isPoisoned)
+            {
+                poisonMarker.SetActive(false);
             }
         }
 

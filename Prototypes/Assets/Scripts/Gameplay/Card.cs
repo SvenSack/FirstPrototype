@@ -61,6 +61,15 @@ namespace Gameplay
                     CursorFollower.Instance.hoveredCard = this;
                     CursorFollower.Instance.isHoveringTCard = highlighter.activeSelf;
                 }
+                else
+                {
+                
+                    if (cardType == GameMaster.CardType.Role)
+                    {
+                        CursorFollower.Instance.hoveredCard = this;
+                        CursorFollower.Instance.isHoveringRCard = highlighter.activeSelf;
+                    }
+                }
             }
         }
 

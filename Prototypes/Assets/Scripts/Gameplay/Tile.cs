@@ -44,7 +44,8 @@ namespace Gameplay
             StageACoupForLeadership,
             IndoctrinateTheFlock,
             StimulateZeal,
-            TrainOrphans
+            TrainOrphans,
+            ThreatenPlayers
         }
 
         private void Start()
@@ -124,6 +125,9 @@ namespace Gameplay
                         return true;
                     }
                     break;
+                case TileType.ThreatenPlayers:
+                    UIManager.Instance.StartSelection(UIManager.SelectionType.ThreatenPlayerDistribution, null);
+                    return true;
                 default:
                     if (isThug)
                     {
@@ -316,7 +320,7 @@ namespace Gameplay
         // this is stuff that is used regularly in the tile logic and thus was made into functions for easier viewing/less lines
         private void GiveCoinsToLeader(int amount)
         {
-            if (player.Equals(GameMaster.Instance.FetchLeader()))
+            if (player.Equals(GameMaster.Instance.FetchLeader()) || (player.roleRevealed && (player.role == GameMaster.Role.Rogue || player.role == GameMaster.Role.Paladin || player.role == GameMaster.Role.Vigilante)))
             {
                 player.AddCoin(amount);
             }
@@ -328,7 +332,7 @@ namespace Gameplay
 
         private void GiveArtifactToLeader()
         {
-            if (player.Equals(GameMaster.Instance.FetchLeader()))
+            if (player.Equals(GameMaster.Instance.FetchLeader()) || (player.roleRevealed && (player.role == GameMaster.Role.Rogue || player.role == GameMaster.Role.Paladin || player.role == GameMaster.Role.Vigilante)))
             {
                 player.DrawACard(GameMaster.CardType.Artifact);
             }
@@ -368,40 +372,86 @@ namespace Gameplay
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.layer == LayerMask.NameToLayer("Pieces"))
+            if (other.gameObject.layer == LayerMask.NameToLayer("Pieces") && player.pv.IsMine)
             {
                 Piece piece = other.gameObject.GetComponent<Piece>();
                 if (!piece.pv.IsMine)
                 {
-                    return;
+                    if (type != TileType.ThreatenPlayers)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        Debug.LogAssertion("Flip to threat");
+                        ThreatPiece tp = piece.GetComponent<ThreatPiece>();
+                        player.piecesThreateningMe.Add(tp);
+                        tp.ToggleThreaten();
+                    }
                 }
                 if (!piece.isPickedUp && !isUsed)
                 {
-                    switch (piece.type)
+                    if (type == TileType.ThreatenPlayers)
                     {
-                        case GameMaster.PieceType.Worker:
-                            if (PerformTileAction(false))
-                            {
-                                piece.ToggleUse();
-                            }
-                            else
-                            {
+                        ThreatPiece tp = piece.GetComponent<ThreatPiece>();
+                        if (tp.isThreatening)
+                        {
+                            tp.ToggleThreaten();
+                        }
+                        Debug.LogAssertion("Open Threat Dialogue");
+                        switch (piece.type)
+                        {
+                            case GameMaster.PieceType.Assassin:
+                                if (PerformTileAction(false))
+                                {
+                                }
+                                else
+                                {
+                                    piece.ResetPiecePosition();
+                                }
+                                break;
+                            case GameMaster.PieceType.Thug:
+                                if (PerformTileAction(false))
+                                {
+                                }
+                                else
+                                {
+                                    piece.ResetPiecePosition();
+                                }
+                                break;
+                            default:
                                 piece.ResetPiecePosition();
-                            }
-                            break;
-                        case GameMaster.PieceType.Thug:
-                            if (PerformTileAction(true))
-                            {
-                                piece.ToggleUse();
-                            }
-                            else
-                            {
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (piece.type)
+                        {
+                            case GameMaster.PieceType.Worker:
+                                if (PerformTileAction(false))
+                                {
+                                    piece.ToggleUse();
+                                }
+                                else
+                                {
+                                    piece.ResetPiecePosition();
+                                }
+                                break;
+                            case GameMaster.PieceType.Thug:
+                                if (PerformTileAction(true))
+                                {
+                                    piece.ToggleUse();
+                                }
+                                else
+                                {
+                                    piece.ResetPiecePosition();
+                                }
+                                break;
+                            default:
                                 piece.ResetPiecePosition();
-                            }
-                            break;
-                        default:
-                            piece.ResetPiecePosition();
-                            break;
+                                break;
+                        }
                     }
                 }
             }

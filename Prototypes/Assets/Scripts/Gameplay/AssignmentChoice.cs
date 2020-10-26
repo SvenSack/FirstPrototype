@@ -9,18 +9,17 @@ namespace Gameplay
 {
     public class AssignmentChoice : MonoBehaviour
     {
-        [SerializeField] private TextMeshProUGUI totalText;
-        [SerializeField] private Button confirmButton;
-        [SerializeField] private Transform onGroup;
-        [SerializeField] private Transform offGroup;
-        [SerializeField] private GameObject[] togglePrefabs;
-        
-        private List<AssignmentToggle> toggledOn = new List<AssignmentToggle>();
-        private List<AssignmentToggle> toggledOff = new List<AssignmentToggle>();
-        private int total;
-        private bool isPayment = true;
+        public TextMeshProUGUI totalText;
+        public Button confirmButton;
+        public Transform onGroup;
+        public Transform offGroup;
+        public GameObject[] togglePrefabs;
+        public List<AssignmentToggle> toggledOn = new List<AssignmentToggle>();
+        public List<AssignmentToggle> toggledOff = new List<AssignmentToggle>();
+        public int total;
+        public bool isPayment = true;
 
-        public void SwitchAssignment(AssignmentToggle target)
+        public virtual void SwitchAssignment(AssignmentToggle target)
         { // called by the assignment pieces when they toggle on/off
             int multiplier;
             if (target.isAssigned)
@@ -44,6 +43,12 @@ namespace Gameplay
                         if (UIManager.Instance.participant.hasZeal)
                         {
                             total = total +  1*multiplier;
+                            break;
+                        }
+
+                        if (UIManager.Instance.participant.roleRevealed &&
+                            UIManager.Instance.participant.role == GameMaster.Role.Vigilante)
+                        {
                             break;
                         }
                         total = total +  2*multiplier;
@@ -87,7 +92,7 @@ namespace Gameplay
             }
         }
 
-        public void CreateToggles()
+        public virtual void CreateToggles()
         { // called by the UImanager to fill the list with Ui elements upon opening
             if (!isPayment)
             {
@@ -124,7 +129,7 @@ namespace Gameplay
             AdjustPositions();
         }
 
-        private void AdjustPositions()
+        public void AdjustPositions()
         { // called whenever one piece moves, TODO: further optimize this by only updating the ones after the changed index
             for (int i = 0; i < toggledOn.Count; i++)
             {

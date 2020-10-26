@@ -25,6 +25,8 @@ namespace Gameplay
         public List<GameObject> pieces = new List<GameObject>();
         public List<InformationPiece> informationHand = new List<InformationPiece>();
         public bool roleRevealed;
+        public List<ThreatPiece> piecesThreateningMe = new List<ThreatPiece>();
+        public bool isDead { get; private set; }
         
         private int health = 0;
         private TextMeshProUGUI coinCounter = null;
@@ -92,16 +94,16 @@ namespace Gameplay
             mySlot = slot.GetComponent<PlayerSlot>();
             mySlot.player = this;
             mySlot.Board.SetActive(true);
+            foreach (var tile in mySlot.publicTiles)
+            {
+                tile.player = this;
+            }
             GameMaster.Instance.seatsClaimed++;
         }
 
         private void GameSetup()
         {
             mySlot.perspective.enabled = true;
-            foreach (var tile in mySlot.publicTiles)
-            {
-                tile.player = this;
-            }
             coinCounter = mySlot.coinCounter;
             CursorFollower.Instance.playerCam = mySlot.perspective;
             UIManager.Instance.participant = this;
@@ -156,18 +158,35 @@ namespace Gameplay
             }
         }
 
-        private void RemoveHealth(byte amount)
+        public void RemoveHealth(byte amount)
         {
             for (int i = 0; i < amount; i++)
             {
-                PhotonNetwork.Destroy(healthObjects[healthObjects.Count-1]);
-                healthObjects.RemoveAt(healthObjects.Count-1);
+                if (health > 0)
+                {
+                    PhotonNetwork.Destroy(healthObjects[healthObjects.Count-1]);
+                    healthObjects.RemoveAt(healthObjects.Count-1);
+                }
                 health--;
             }
 
             if (health < 1)
             {
-                //TODO: player death
+                GameOver(false);
+                Participant[] participants = FindObjectsOfType<Participant>();
+                List<Participant> alivePlayers = new List<Participant>();
+                foreach (var p in participants)
+                {
+                    if (!p.isDead)
+                    {
+                        alivePlayers.Add(p);
+                    }
+                }
+
+                if (alivePlayers.Count == 1)
+                {
+                    alivePlayers[0].EndTheGame();
+                }
             }
         }
 
@@ -183,6 +202,25 @@ namespace Gameplay
             if (setUsed)
             {
                 nPPiece.ToggleUse();
+            }
+        }
+
+        public void EndTheGame()
+        {
+            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+            {
+                GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("EndGame", RpcTarget.AllBuffered);
+            }
+        }
+
+        public void GameOver(bool hasWon)
+        {
+            isDead = true;
+            UIManager.Instance.dead = true;
+            UIManager.Instance.ResetAfterSelect();
+            if (hasWon)
+            {
+                
             }
         }
 
@@ -215,6 +253,10 @@ namespace Gameplay
             if (PhotonNetwork.IsMasterClient)
             {
                 GameMaster.Instance.EndTurn(true);
+            }
+            if (role == GameMaster.Role.Leader)
+            {
+                UIManager.Instance.RevealRole(false);
             }
         }
 
@@ -296,6 +338,7 @@ namespace Gameplay
                 newCard.transform.rotation = mySlot.threatLocation.rotation;
                 Card cardPart = newCard.GetComponent<Card>();
                 cardPart.hoverLocation = mySlot.hoverLocation;
+                cardPart.cardIndex = cardIndex;
                 tHand.Add(cardPart);
             }
         }
@@ -307,6 +350,47 @@ namespace Gameplay
             {
                 PhotonNetwork.Destroy(tHand[handIndex].pv);
                 tHand.RemoveAt(handIndex);
+            }
+        }
+        
+        [PunRPC]
+        public void EndGame()
+        {
+            if (pv.IsMine && health > 0)
+            {
+                bool isAWinner = false;
+                switch (role)
+                {
+                    case GameMaster.Role.Leader:
+                        isAWinner = true;
+                        break;
+                    case GameMaster.Role.Rogue:
+                        if (coins >= 20)
+                        {
+                            isAWinner = true;
+                        }
+                        break;
+                    case GameMaster.Role.Vigilante:
+                    case GameMaster.Role.Paladin:
+                        for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+                        {
+                            Participant p = GameMaster.Instance.FetchPlayerByNumber(i);
+                            if (!p.isDead && (p.role == GameMaster.Role.Leader || p.role == GameMaster.Role.Noble ||
+                                              p.role == GameMaster.Role.Rogue || p.role == GameMaster.Role.Gangster))
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                isAWinner = true;
+                            }
+                        }
+                        break;
+                    case GameMaster.Role.Noble:
+                        // TODO implement noble win
+                        break;
+                }
+                GameOver(isAWinner);
             }
         }
 
@@ -339,7 +423,6 @@ namespace Gameplay
                 if (role == GameMaster.Role.Leader)
                 {
                     AddHealth(1);
-                    roleRevealed = true;
                 }
                 
                 if (character == GameMaster.Character.Adventurer)
@@ -464,6 +547,39 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void RevealRoleOf(byte playerIndexWhoRevealed)
+        {
+            if (pv.IsMine)
+            {
+                Participant part = GameMaster.Instance.FetchPlayerByNumber(playerIndexWhoRevealed);
+                part.roleRevealed = true;
+                GameMaster.Instance.roleRevealTurns[(int) part.role] = GameMaster.Instance.turnCounter;
+                if (playerNumber != playerIndexWhoRevealed)
+                {
+                    Decklist.Instance.roleCards.TryGetValue(part.role, out RoleCard roleCard);
+                    string content = UIManager.Instance.CreateCharPlayerString(part) + " is " + roleCard.name;
+                    string header = UIManager.Instance.CreateCharPlayerString(part) + " has revealed their role";
+                    if (part.role == GameMaster.Role.Noble)
+                    {
+                        RpcAddEvidence(content, header, GameMaster.Instance.FetchLeader().playerNumber == playerNumber, playerIndexWhoRevealed);
+                    }
+                    else
+                    {
+                        RpcAddEvidence(content, header, false, playerIndexWhoRevealed);
+                    }
+                }
+                else
+                {
+                    if (role == GameMaster.Role.Noble)
+                    {
+                        AddCoin(10);
+                    }
+                }
+            }
+        }
+
+
+        [PunRPC]
         public void RpcEndTurn(bool isFirst)
         {
             if (pv.IsMine)
@@ -471,7 +587,15 @@ namespace Gameplay
                 if (!isFirst)
                 {
                     UIManager.Instance.turnEnded = false;
-                    UIManager.Instance.StartSelection(UIManager.SelectionType.PostTurnPay, null);
+                    Piece[] pieces = FindObjectsOfType<Piece>();
+                    foreach (var piece in pieces)
+                    {
+                        if (piece.pv.IsMine && piece.type != GameMaster.PieceType.Worker)
+                        {
+                            UIManager.Instance.StartSelection(UIManager.SelectionType.PostTurnPay, null);
+                            break;
+                        }
+                    }
 
                     switch (character)
                     {
@@ -497,6 +621,16 @@ namespace Gameplay
                     {
                         AddPiece(GameMaster.PieceType.Thug, false);
                     }
+                    
+                    if (role == GameMaster.Role.Vigilante && roleRevealed)
+                    {
+                        AddPiece(GameMaster.PieceType.Assassin, false);
+                    }
+                    
+                    if (role == GameMaster.Role.Noble && roleRevealed)
+                    {
+                        AddCoin(2);
+                    }
 
                     foreach (var tile in FindObjectsOfType<Tile>())
                     {
@@ -505,9 +639,16 @@ namespace Gameplay
                             tile.ToggleUsed();
                         }
                     }
-                
-                    // TODO: threat pieces
+
+                    if (piecesThreateningMe.Count != 0)
+                    {
+                        UIManager.Instance.StartSelection(UIManager.SelectionType.ThreatenedPlayerResolution, null);
+                    }
                 }
+                
+                // TODO add vigilante reveal
+                // TODO add adventurer dr
+                // TODO figure out a workaround for the "not paying threatening pieces" play
                 
                 if (role == GameMaster.Role.Leader)
                 {
@@ -520,7 +661,7 @@ namespace Gameplay
                             {
                                 for (int e = 0; e < GameMaster.Instance.seatsClaimed; e++)
                                 {
-                                    GameMaster.Instance.FetchPlayerByNumber(e).pv.RPC("RpcRemoveHealth", RpcTarget.All, 1);
+                                    GameMaster.Instance.FetchPlayerByNumber(e).pv.RPC("RpcRemoveHealth", RpcTarget.All, (byte)1);
                                 }
                             }
                         
@@ -543,7 +684,10 @@ namespace Gameplay
                         case 1:
                         case 3:
                             int threatAmount = Mathf.CeilToInt(GameMaster.Instance.seatsClaimed / 2f);
-                            // TODO implement paladin reveal here
+                            if (GameMaster.Instance.roleRevealTurns[2] == GameMaster.Instance.turnCounter && GameMaster.Instance.turnCounter > 0)
+                            {
+                                threatAmount++;
+                            }
                             for (int i = 0; i < threatAmount; i++)
                             {
                                 byte newThreatIndex = (byte)GameMaster.Instance.DrawCard(GameMaster.CardType.Threat);
@@ -558,7 +702,7 @@ namespace Gameplay
                             UIManager.Instance.StartSelection(UIManager.SelectionType.WorkerAssignment, null);
                             break;
                         case 5:
-                            // TODO: end game
+                            EndTheGame();
                             break;
                     }
                 }
@@ -573,10 +717,12 @@ namespace Gameplay
             if (stream.IsWriting)
             {
                 stream.SendNext(coins);
+                stream.SendNext(isDead);
             }
             else
             {
                 coins = (int)stream.ReceiveNext();
+                isDead = (bool) stream.ReceiveNext();
             }
         }
     }

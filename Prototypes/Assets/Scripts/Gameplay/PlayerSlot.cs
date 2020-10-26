@@ -20,6 +20,7 @@ namespace Gameplay
         public Tile[] publicTiles = new Tile[5];
         public Transform hoverLocation;
         public Transform[] jobLocations = new Transform[5];
+        public Transform threateningPiecesLocation;
 
         // this class, similar to the decklist is just a place to put values, in this case the data for a new participant to interface with the gameworld (mostly locations of stuff)
         

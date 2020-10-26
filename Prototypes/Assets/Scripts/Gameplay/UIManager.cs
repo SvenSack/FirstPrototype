@@ -2,6 +2,7 @@
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,7 +16,6 @@ namespace Gameplay
         [SerializeField] private AssignmentChoice postTurnPayAssigner;
         [SerializeField] private GameObject[] playerSelectorsChar = new GameObject[6];
         [SerializeField] private GameObject playerSelectorChar;
-        [SerializeField] private GameObject workerUIPrefab;
         [SerializeField] private GameObject[] jobSelectionUIPrefabs = new GameObject[5];
         [SerializeField] private TextMeshProUGUI cardTargetingText;
         [SerializeField] private TextMeshProUGUI baubleDecisionText;
@@ -23,7 +23,9 @@ namespace Gameplay
         [SerializeField] private GameObject archiveUI;
         [SerializeField] private ArchiveUI archive;
         [SerializeField] private DialUI[] threatResourceDials = new DialUI[2];
+        [SerializeField] private AntiThreatAssigner antiThreatAssigner;
         
+        [ReadOnly] public GameObject[] pieceDistributionUIPrefabs = new GameObject[3];
         public static UIManager Instance;
         public bool isGrabbingPiece;
         public Camera playerCamera;
@@ -39,8 +41,10 @@ namespace Gameplay
         public ThreatAssignmentPool[] threatAssignmentPools = new ThreatAssignmentPool[6];
         public GameObject defaultUI;
         public DistributionPool[] workerDistributionPools = new DistributionPool[7];
+        public ThreatDistributionPool[] threatPieceDistributionPools = new ThreatDistributionPool[7];
         public DistributionPool[] jobDistributionPools = new DistributionPool[7];
         public bool turnEnded;
+        public bool dead;
         
         private bool isGrabbingUI;
         private TargetingReason typeOfTargeting;
@@ -70,6 +74,9 @@ namespace Gameplay
             BowTargetAssignment,
             ThreatCardAssignment,
             ThreatCardACardAssignment,
+            RoleRevealDecision,
+            ThreatenPlayerDistribution,
+            ThreatenedPlayerResolution,
             
         }
 
@@ -112,6 +119,13 @@ namespace Gameplay
                 if (jdp.isFlex)
                 {
                     jdp.gameObject.SetActive(false);
+                }
+            }
+            foreach (var tpdp in threatPieceDistributionPools)
+            {
+                if (tpdp.isFlex)
+                {
+                    tpdp.gameObject.SetActive(false);
                 }
             }
             archiveUI.SetActive(false);
@@ -160,6 +174,11 @@ namespace Gameplay
                 if (!isGrabbingPiece && !isSelecting && CursorFollower.Instance.isHoveringTCard)
                 {
                     StartSelection(SelectionType.ThreatCardAssignment, null);
+                }
+                
+                if (!isGrabbingPiece && !isSelecting && CursorFollower.Instance.isHoveringRCard && !participant.roleRevealed)
+                {
+                    StartSelection(SelectionType.RoleRevealDecision, null);
                 }
 
                 if (isSelectingDistribution && !isGrabbingUI)
@@ -217,7 +236,7 @@ namespace Gameplay
             }
         }
 
-        private void ResetAfterSelect()
+        public void ResetAfterSelect()
         { // this is used by all selection types to reset to a base state after use
             SelectionPopUps[(int)typeOfSelection].SetActive(false);
             isSelecting = false;
@@ -267,7 +286,7 @@ namespace Gameplay
 
         public void StartSelection(SelectionType type, Tile thisTile)
         { // this is used for all selection UIs (which is the name I gave to UI which asks for a player decision)
-            if (!turnEnded)
+            if (!turnEnded && !dead)
             {
             
                 if (!isSelecting)
@@ -281,6 +300,7 @@ namespace Gameplay
                     { 
                         case SelectionType.BaubleDecision:
                         case SelectionType.SerumPopUp:
+                        case SelectionType.RoleRevealDecision:
                         case SelectionType.BlackMarket:
                             break;
                         // Above are popup with only buttons
@@ -295,6 +315,9 @@ namespace Gameplay
                             break;
                         case SelectionType.BowTargetAssignment:
                             bowDecider.CreateToggles();
+                            break;
+                        case SelectionType.ThreatenedPlayerResolution:
+                            antiThreatAssigner.CreateToggles();
                             break;
                         // Above are two list assignment popups
                         case SelectionType.Poisoner:
@@ -311,11 +334,23 @@ namespace Gameplay
                         case SelectionType.WorkerAssignment:
                             isSelectingDistribution = true;
                             int workerAmount = GameMaster.Instance.turnCounter + GameMaster.Instance.seatsClaimed * 3;
-                            // TODO: add revealed mechanic paladin here
+                            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+                            {
+                                Participant player = GameMaster.Instance.FetchPlayerByNumber(i);
+                                if (player.roleRevealed && player.role == GameMaster.Role.Paladin)
+                                {
+                                    workerAmount -= 2;
+                                    player.pv.RPC("RpcAddPiece", RpcTarget.All, (byte)GameMaster.PieceType.Worker, 2);
+                                }
+                            }
                             for (int i = 0; i < workerAmount; i++)
                             {
-                                workerDistributionPools[0].ChangeItem(Instantiate(workerUIPrefab, transform), true);
+                                workerDistributionPools[0].ChangeItem(Instantiate(pieceDistributionUIPrefabs[0], transform), true);
                             }
+                            break;
+                        case SelectionType.ThreatenPlayerDistribution:
+                            isSelectingDistribution = true;
+                            CreatePieceAssignmentUI();
                             break;
                         case SelectionType.JobAssignment:
                             isSelectingDistribution = true;
@@ -337,7 +372,11 @@ namespace Gameplay
                 }
                 else
                 {
-                    selectionBuffer.Add(type);
+                    if (type != SelectionType.ThreatenPlayerDistribution)
+                    {
+                        selectionBuffer.Add(type);
+                        Debug.LogAssertion("Added " +type+ " to the selection buffer");
+                    }
                 }    
             }
         }
@@ -401,6 +440,19 @@ namespace Gameplay
             {
                 ResetAfterSelect();
                 targetedThreat.pv.RPC("Contribute", RpcTarget.All, participant.playerNumber, threatContributedValues);
+            }
+        }
+
+        public void RevealRole(bool endAfter)
+        {
+            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+            {
+                GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RevealRoleOf", RpcTarget.All, (byte) participant.playerNumber);
+            }
+
+            if (endAfter)
+            {
+                ResetAfterSelect();
             }
         }
 
@@ -483,7 +535,11 @@ namespace Gameplay
                                 break;
                             }
                         case GameMaster.Artifact.Wand:
-                            // TODO implement this once threat is in
+                            foreach (var tp in participant.piecesThreateningMe)
+                            {
+                                PhotonNetwork.Destroy(tp.thisPiece.pv);
+                            }
+                            participant.piecesThreateningMe = new List<ThreatPiece>();
                             PlayCard(hoveredCard);
                             break;
                     }
@@ -604,17 +660,28 @@ namespace Gameplay
             ResetAfterSelect();
         }
 
+        public void ConfirmThreatenPlayerDistribution()
+        {
+            for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+            {
+                foreach (var tpui in threatPieceDistributionPools[i+1].heldItems)
+                {
+                    tpui.represents.ThreatenPlayer(i);
+                }
+                threatPieceDistributionPools[i+1].DropPool();
+            }
+            ResetAfterSelect();
+        }
+
         public void ConfirmJobDistribution()
         { // this is the confirm button for the leader-job distribution popup
-            for (int i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
+            for (byte i = 0; i < PhotonNetwork.CurrentRoom.PlayerCount; i++)
             {
-                Participant target = GameMaster.Instance.FetchPlayerByNumber(i);
                 for (byte j = 0; j < jobDistributionPools[i+1].objectsHeld.Count; j++)
                 {
                     JobPieceUI jpui = jobDistributionPools[i+1].objectsHeld[j].GetComponent<JobPieceUI>();
                     Board targetBoard = GameMaster.Instance.jobBoards[(int) jpui.representedJob].GetComponent<Board>();
-                    targetBoard.pv.TransferOwnership(target.pv.Controller);
-                    targetBoard.pv.RPC("ChangeJobHolder", RpcTarget.All, j);
+                    targetBoard.pv.RPC("ChangeJobHolder", RpcTarget.All, j, i);
                 }
                 jobDistributionPools[i+1].DropPool();
             }
@@ -641,6 +708,12 @@ namespace Gameplay
             }
             ResetAfterSelect();
             
+        }
+
+        public void ConfirmAntiThreatAssignment()
+        {
+            participant.RemoveHealth((byte)antiThreatAssigner.TallyAndClean());
+            ResetAfterSelect();
         }
 
         public void ConfirmBaubleChoice(bool decision)
@@ -710,7 +783,7 @@ namespace Gameplay
             }
             ResetAfterSelect();
         }
-        
+
         #endregion
 
         #region Helpers
@@ -909,7 +982,14 @@ namespace Gameplay
                 workerDistributionPools[i + 1].labelText.text = nameText;
                 jobDistributionPools[i + 1].gameObject.SetActive(true);
                 jobDistributionPools[i + 1].labelText.text = nameText;
+                threatPieceDistributionPools[i + 1].gameObject.SetActive(true);
+                threatPieceDistributionPools[i + 1].labelText.text = nameText;
             }
+        }
+
+        public void CreatePieceAssignmentUI()
+        {
+            threatPieceDistributionPools[0].PopulatePool();
         }
 
         public string CreateCharPlayerString(Participant player)

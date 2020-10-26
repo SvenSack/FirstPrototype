@@ -9,6 +9,7 @@ namespace Gameplay
         public Camera playerCam;
         public bool isHoveringACard;
         public bool isHoveringTCard;
+        public bool isHoveringRCard;
         public Card hoveredCard;
         public bool active;
     

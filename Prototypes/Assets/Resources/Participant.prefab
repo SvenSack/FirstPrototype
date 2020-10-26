@@ -58,6 +58,8 @@ MonoBehaviour:
   coins: 0
   hasZeal: 0
   pieces: []
+  roleRevealed: 0
+  piecesThreateningMe: []
 --- !u!114 &1349756622432304604
 MonoBehaviour:
   m_ObjectHideFlags: 0

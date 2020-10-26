@@ -197,6 +197,7 @@
         </e>
         <e p="Scripts" t="Include">
           <e p="Gameplay" t="Include">
+            <e p="AntiThreatAssigner.cs" t="Include" />
             <e p="ArchiveItem.cs" t="Include" />
             <e p="ArchiveUI.cs" t="Include" />
             <e p="AssignmentChoice.cs" t="Include" />
@@ -218,6 +219,9 @@
             <e p="Threat.cs" t="Include" />
             <e p="ThreatAssignmentPieceUI.cs" t="Include" />
             <e p="ThreatAssignmentPool.cs" t="Include" />
+            <e p="ThreatDistributionPieceUI.cs" t="Include" />
+            <e p="ThreatDistributionPool.cs" t="Include" />
+            <e p="ThreatPiece.cs" t="Include" />
             <e p="Tile.cs" t="Include" />
             <e p="UIManager.cs" t="Include" />
           </e>

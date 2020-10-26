@@ -91,6 +91,7 @@ namespace Gameplay
         public PhotonView pv;
         public GameObject threatObject = null;
         public bool[] passedPlayers;
+        public int[] roleRevealTurns = new int[7];
 
         #region Enums
 
@@ -217,6 +218,7 @@ namespace Gameplay
         IEnumerator CommenceGame()
         { // this is used to avoid network latency interfering. I wanted to use buffered RPC calls, but their order was not guaranteed, this is a bit ugly in my opinion
             yield return new WaitUntil(StartCondition);
+            yield return new WaitForSeconds(1);
             Participant[] players = FindObjectsOfType<Participant>();
             foreach (var player in players)
             {

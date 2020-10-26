@@ -8,25 +8,23 @@ namespace Gameplay
 {
     public class DistributionPool : MonoBehaviour
     {
-        [SerializeField] private float rowSize;
-        [SerializeField] private float columnSize;
-        [SerializeField] private int columns;
-        [SerializeField] private int rows;
-        [SerializeField] private Vector2 firstPostion;
-        [SerializeField] private Button confirmButton;
-        [SerializeField] private bool isJobPool;
-        
+        public float rowSize;
+        public float columnSize;
+        public int columns;
+        public int rows;
+        public Vector2 firstPostion;
+        public Button confirmButton;
+        public bool isJobPool;
         public List<DistributionPieceUI> objectsHeld = new List<DistributionPieceUI>();
         public bool isFlex;
         public TextMeshProUGUI labelText;
-        
-        private float width;
-        private float height;
-        private bool flaggedForAdjustment;
-        private List<DistributionPool> activePlayerPools = new List<DistributionPool>();
-        private float originalRowSize;
-        private float originalColumSize;
-        private int originalColumns;
+        public float width;
+        public float height;
+        public bool flaggedForAdjustment;
+        public List<DistributionPool> activePlayerPools = new List<DistributionPool>();
+        public float originalRowSize;
+        public float originalColumSize;
+        public int originalColumns;
     
         void Start()
         {
@@ -41,7 +39,7 @@ namespace Gameplay
             }
         }
 
-        private void Update()
+        public virtual void Update()
         {
             if (isJobPool && activePlayerPools.Count == 0)
             {
@@ -106,7 +104,7 @@ namespace Gameplay
             }
         }
 
-        public void ChangeItem(GameObject item, bool isAdded)
+        public virtual void ChangeItem(GameObject item, bool isAdded)
         { // this is what actually drops the item into pools
             DistributionPieceUI wPUI = item.GetComponent<DistributionPieceUI>();
             if (isAdded)
@@ -156,7 +154,7 @@ namespace Gameplay
             flaggedForAdjustment = true;
         }
 
-        public void DropPool()
+        public virtual void DropPool()
         { // this is used by the UImanager to reset the pools
             foreach (var obj in objectsHeld)
             {
@@ -165,7 +163,7 @@ namespace Gameplay
             objectsHeld = new List<DistributionPieceUI>();
         }
         
-        private void AdjustPositions()
+        public virtual void AdjustPositions()
         { // this places objects correctly to avoid gaps
             for (int i = 0; i < objectsHeld.Count; i++)
             {

@@ -34,9 +34,10 @@ namespace Gameplay
         }
 
         [PunRPC]
-        public void ChangeJobHolder(byte boardIndex)
+        public void ChangeJobHolder(byte boardIndex, byte newOwnerNumber)
         { // assigns a new owner to the jobboard
-            Participant newHolder = GameMaster.Instance.FetchPlayerByPlayer(pv.Controller);
+            Participant newHolder = GameMaster.Instance.FetchPlayerByNumber(newOwnerNumber);
+            pv.TransferOwnership(newHolder.pv.Controller);
             jobHolder = newHolder;
             foreach (var tile in tiles)
             {

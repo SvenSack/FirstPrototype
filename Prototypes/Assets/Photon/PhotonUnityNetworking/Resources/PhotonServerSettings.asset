@@ -68,6 +68,9 @@ MonoBehaviour:
   - RpcRemoveTCard
   - LookBehindScreenBy
   - RpcAddEvidence
+  - RevealRoleOf
+  - DestroyThis
+  - EndGame
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1
