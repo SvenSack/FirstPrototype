@@ -24,6 +24,7 @@ namespace Gameplay
         public bool hasZeal;
         public List<GameObject> pieces = new List<GameObject>();
         public List<InformationPiece> informationHand = new List<InformationPiece>();
+        public bool roleRevealed;
         
         private int health = 0;
         private TextMeshProUGUI coinCounter = null;
@@ -338,6 +339,7 @@ namespace Gameplay
                 if (role == GameMaster.Role.Leader)
                 {
                     AddHealth(1);
+                    roleRevealed = true;
                 }
                 
                 if (character == GameMaster.Character.Adventurer)
@@ -490,8 +492,11 @@ namespace Gameplay
                             // TODO implement this
                             break;
                     }
-                    
-                    // TODO add the revealed gangster here
+
+                    if (role == GameMaster.Role.Gangster && roleRevealed)
+                    {
+                        AddPiece(GameMaster.PieceType.Thug, false);
+                    }
 
                     foreach (var tile in FindObjectsOfType<Tile>())
                     {
