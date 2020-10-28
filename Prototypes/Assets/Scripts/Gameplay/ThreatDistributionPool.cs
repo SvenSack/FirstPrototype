@@ -67,7 +67,6 @@ namespace Gameplay
                     }
                 }
                 
-                // TODO also flex the column and row sizes to match based on factor
             }
             else if(isFlex)
             {

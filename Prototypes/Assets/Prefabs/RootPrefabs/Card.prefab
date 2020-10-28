@@ -337,8 +337,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4290022508
-  m_fontColor: {r: 0.42352945, g: 0.54901963, b: 0.7058824, a: 1}
+    rgba: 4290031212
+  m_fontColor: {r: 0.42352942, g: 0.6835808, b: 0.7058824, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -651,15 +651,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 295d8007f993e0c4880144cab8925a8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  highlighter: {fileID: 3212330419159702215}
+  cardBody: {fileID: 4448891646226721779}
+  cardIndex: 0
   cardType: 0
+  isPrivate: 1
+  pv: {fileID: 0}
   cardName: {fileID: 4374641010307971333}
   text: {fileID: 3503933500009222948}
   extraText1: {fileID: 0}
   extraText2: {fileID: 0}
   illustration: {fileID: 4649920572455779385}
   icon: {fileID: 0}
-  highlighter: {fileID: 3212330419159702215}
-  cardBody: {fileID: 4448891646226721779}
+  cardCollider: {fileID: 0}
+  threat: {fileID: 0}
 --- !u!1 &9019732307936613350
 GameObject:
   m_ObjectHideFlags: 0

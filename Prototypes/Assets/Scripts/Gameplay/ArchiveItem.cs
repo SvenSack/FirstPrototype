@@ -38,7 +38,7 @@ namespace Gameplay
             impliesSomeone = source.isEvidence;
             archive = _archive;
             toggle.group = archive.GetComponent<ToggleGroup>();
-            if (!impliesSomeone)
+            if (!impliesSomeone || source.header == "The Noble is suspicious")
             {
                 implicationObject.SetActive(false);
             }

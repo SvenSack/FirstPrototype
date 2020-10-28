@@ -130,7 +130,7 @@ namespace Gameplay
         }
 
         public void AdjustPositions()
-        { // called whenever one piece moves, TODO: further optimize this by only updating the ones after the changed index
+        { // called whenever one piece moves
             for (int i = 0; i < toggledOn.Count; i++)
             {
                 int row = Mathf.FloorToInt(i / 5f);

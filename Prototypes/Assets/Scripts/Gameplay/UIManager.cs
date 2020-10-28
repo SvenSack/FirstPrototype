@@ -24,6 +24,7 @@ namespace Gameplay
         [SerializeField] private ArchiveUI archive;
         [SerializeField] private DialUI[] threatResourceDials = new DialUI[2];
         [SerializeField] private AntiThreatAssigner antiThreatAssigner;
+        [SerializeField] private GameObject[] endturnButtons = new GameObject[2];
         
         [ReadOnly] public GameObject[] pieceDistributionUIPrefabs = new GameObject[3];
         public static UIManager Instance;
@@ -389,6 +390,8 @@ namespace Gameplay
             {
                 turnEnded = true;
                 participant.pv.RPC("PassTurn", RpcTarget.MasterClient, (byte)participant.playerNumber);
+                endturnButtons[0].SetActive(false);
+                endturnButtons[1].SetActive(true);
             }
         }
         
@@ -858,6 +861,13 @@ namespace Gameplay
                 threatResourceDials[1].gameObject.SetActive(false);
             }
         }
+
+        public void StartTurnAgain()
+        {
+            turnEnded = false;
+            endturnButtons[0].SetActive(true);
+            endturnButtons[1].SetActive(false);
+        }
         
         private void CardSelectTarget(TargetingReason reason)
         { // this handles targeting player for certain cards
@@ -1060,3 +1070,37 @@ public class InformationPiece
         evidenceTargetIndex = _evidenceTargetIndex;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

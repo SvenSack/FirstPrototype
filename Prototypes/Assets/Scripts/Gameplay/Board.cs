@@ -8,7 +8,7 @@ using Random = UnityEngine.Random;
 namespace Gameplay
 {
     public class Board : MonoBehaviour
-    { // TODO this class is pretty similar to the participant, check if inheritance may be possible one way or another
+    {
         [SerializeField] private TextMeshProUGUI coinCounter;
         [SerializeField] private Tile[] tiles = new Tile[4];
         [SerializeField] private GameObject coinObject = null;

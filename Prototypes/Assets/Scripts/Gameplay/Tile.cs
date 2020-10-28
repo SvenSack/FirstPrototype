@@ -247,7 +247,26 @@ namespace Gameplay
                                 player.DrawACard(GameMaster.CardType.Action);
                                 ToggleUsed();
                                 return true;
-                            // TODO: implement other whispers jobs when info is in
+                            case TileType.ForgeEvidence:
+                                // TODO make UI to select a target player to write about, and then get one to write evidence
+                                ToggleUsed();
+                                return true;
+                            case TileType.FalsifyBooks:
+                                if (player.informationHand.Count > 0)
+                                {
+                                    // TODO make UI to select a piece of information, then make ome to edit that text
+                                    ToggleUsed();
+                                    return true;
+                                }
+                                break;
+                            case TileType.BlackmailNobility:
+                                if (player.informationHand.Count > 0)
+                                {
+                                    // TODO make UI to select a piece of information, then bind the drawing of actions to that
+                                    ToggleUsed();
+                                    return true;
+                                }
+                                break;
                             case TileType.SmuggleLuxuryGoods:
                                 board.AddCoin(4);
                                 ToggleUsed();

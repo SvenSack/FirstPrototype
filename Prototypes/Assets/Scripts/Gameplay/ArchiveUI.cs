@@ -39,11 +39,11 @@ namespace Gameplay
             {
                 if (!isAfterOpened)
                 {
-                    archive[i].transform.position = archiveParent.position + (Vector3)firstItemPosition+ new Vector3(0, distanceBetweenItems*i, 0);
+                    archive[i].transform.position = archiveParent.position + (Vector3)firstItemPosition+ new Vector3(0, -distanceBetweenItems*i, 0);
                 }
                 else
                 {
-                    archive[i].transform.position = archiveParent.position + (Vector3)firstItemPosition+ new Vector3(0, 200+distanceBetweenItems*i, 0);
+                    archive[i].transform.position = archiveParent.position + (Vector3)firstItemPosition+ new Vector3(0, 200-distanceBetweenItems*i, 0);
                 }
                 if (archive[i].isOpened)
                 {

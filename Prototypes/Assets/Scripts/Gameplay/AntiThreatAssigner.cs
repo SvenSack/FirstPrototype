@@ -33,6 +33,10 @@ namespace Gameplay
                         toggle.isPrivate = piece.isPrivate;
                         toggle.isPoisoned = piece.poisoned;
                         ThreatPiece tp = piece.GetComponent<ThreatPiece>();
+                        if (UIManager.Instance.participant.character == GameMaster.Character.Adventurer)
+                        {
+                            tp.damageValue = 0;
+                        }
                         if (UIManager.Instance.participant.role == GameMaster.Role.Gangster
                             && GameMaster.Instance.roleRevealTurns[(int) GameMaster.Role.Gangster] == GameMaster.Instance.turnCounter
                             && piece.type == GameMaster.PieceType.Thug)

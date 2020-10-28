@@ -32,6 +32,8 @@ namespace Gameplay
         private TextMeshProUGUI coinCounter = null;
         private List<GameObject> coinObjects = new List<GameObject>();
         private List<GameObject> healthObjects = new List<GameObject>();
+        private bool isWaitingForNobleWin;
+        private Coroutine nobleWin;
 
         private void Start()
         {
@@ -213,6 +215,23 @@ namespace Gameplay
             }
         }
 
+        private void DenyNobleWin()
+        {
+            isWaitingForNobleWin = false;
+            StopCoroutine(nobleWin);
+            GameOver(false);
+        }
+
+        IEnumerator WaitForNobleWin()
+        {
+            isWaitingForNobleWin = true;
+            yield return new WaitForSeconds(5f);
+            if (isWaitingForNobleWin)
+            {
+                GameOver(true);
+            }
+        }
+
         public void GameOver(bool hasWon)
         {
             isDead = true;
@@ -258,6 +277,28 @@ namespace Gameplay
             {
                 UIManager.Instance.RevealRole(false);
             }
+
+            if (role == GameMaster.Role.Noble)
+            {
+                string head = "The Noble is suspicious";
+                string[] nobleActions =
+                {
+                    "They slept with the servant girl",
+                    "They made a pact with demons for power",
+                    "They killed their father to inherit his wealth",
+                    "They embezzle most of the cities taxes",
+                    "They are a member of the Thieves Guild",
+                    "They once drunkenly gambled away their palace"
+                };
+                for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+                {
+                    if (i != playerNumber)
+                    {
+                        string content = nobleActions[Random.Range(0, 5)];
+                        GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RpcAddEvidence", RpcTarget.Others, content, head, true, playerNumber);
+                    }
+                }
+            }
         }
 
         #region RPC
@@ -298,6 +339,31 @@ namespace Gameplay
             if (pv.IsMine)
             {
                 DrawACard(GameMaster.CardType.Artifact);
+            }
+        }
+
+        [PunRPC]
+        public void RpcReturnNobleCheck(byte playerIndexOfNoble)
+        {
+            if (pv.IsMine)
+            {
+                foreach (var info in informationHand)
+                {
+                    if (info.isEvidence && info.evidenceTargetIndex == playerIndexOfNoble)
+                    {
+                        GameMaster.Instance.FetchPlayerByNumber(playerIndexOfNoble).pv.RPC("NobleWinDenied", RpcTarget.Others);
+                        break;
+                    }
+                }
+            }
+        }
+
+        [PunRPC]
+        public void NobleWinDenied()
+        {
+            if (pv.IsMine && isWaitingForNobleWin)
+            {
+                DenyNobleWin();
             }
         }
 
@@ -358,16 +424,20 @@ namespace Gameplay
         {
             if (pv.IsMine && health > 0)
             {
-                bool isAWinner = false;
                 switch (role)
                 {
                     case GameMaster.Role.Leader:
-                        isAWinner = true;
+                        
+                        GameOver(true);
                         break;
                     case GameMaster.Role.Rogue:
                         if (coins >= 20)
                         {
-                            isAWinner = true;
+                            GameOver(true);
+                        }
+                        else
+                        {
+                            GameOver(false);
                         }
                         break;
                     case GameMaster.Role.Vigilante:
@@ -378,19 +448,30 @@ namespace Gameplay
                             if (!p.isDead && (p.role == GameMaster.Role.Leader || p.role == GameMaster.Role.Noble ||
                                               p.role == GameMaster.Role.Rogue || p.role == GameMaster.Role.Gangster))
                             {
+                                GameOver(false);
                                 break;
                             }
                             else
                             {
-                                isAWinner = true;
+                                GameOver(true);
                             }
                         }
                         break;
                     case GameMaster.Role.Noble:
-                        // TODO implement noble win
+                        for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
+                        {
+                            if (i != playerNumber)
+                            {
+                                GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RpcReturnNobleCheck", RpcTarget.Others,(byte) playerNumber);
+                            }
+                        }
+
+                        nobleWin = StartCoroutine(WaitForNobleWin());
+                        break;
+                    default:
+                        GameOver(false);
                         break;
                 }
-                GameOver(isAWinner);
             }
         }
 
@@ -586,7 +667,7 @@ namespace Gameplay
             {
                 if (!isFirst)
                 {
-                    UIManager.Instance.turnEnded = false;
+                    UIManager.Instance.StartTurnAgain();
                     Piece[] pieces = FindObjectsOfType<Piece>();
                     foreach (var piece in pieces)
                     {
@@ -612,8 +693,10 @@ namespace Gameplay
                             AddPiece(GameMaster.PieceType.Thug, false);
                             break;
                         case GameMaster.Character.OldFox:
-                            // compare against turncounter and potentially act
-                            // TODO implement this
+                            if (GameMaster.Instance.turnCounter % 2 == 0)
+                            {
+                                // TODO create ui selection to pick a job, and add a bool to let the leader know this happened
+                            }
                             break;
                     }
 
@@ -647,8 +730,7 @@ namespace Gameplay
                 }
                 
                 // TODO add vigilante reveal
-                // TODO add adventurer dr
-                // TODO figure out a workaround for the "not paying threatening pieces" play
+                // TODO add a remote pause to the selection events to fix the payment-threat glitch and to make selene work
                 
                 if (role == GameMaster.Role.Leader)
                 {
