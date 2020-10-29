@@ -223,6 +223,8 @@
             <e p="ThreatDistributionPool.cs" t="Include" />
             <e p="ThreatPiece.cs" t="Include" />
             <e p="Tile.cs" t="Include" />
+            <e p="TradeAssignmentChoice.cs" t="Include" />
+            <e p="TradeAssignmentToggle.cs" t="Include" />
             <e p="UIManager.cs" t="Include" />
           </e>
           <e p="Setup" t="Include">

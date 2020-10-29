@@ -9,8 +9,8 @@ namespace Gameplay
     public class ThreatPiece : MonoBehaviour
     {
         [SerializeField] private Material threatMaterial;
-        
-        public int originPlayerNumber { get; private set; }
+
+        public int originPlayerNumber;
         public Piece thisPiece { get; private set; }
         public bool isThreatening { get; private set; }
         public int damageValue;
@@ -37,7 +37,10 @@ namespace Gameplay
 
         public void ThreatenPlayer(int playerIndexToThreaten)
         {
-            ToggleThreaten();
+            if (!isThreatening)
+            {
+                ToggleThreaten();
+            }
             Participant target = GameMaster.Instance.FetchPlayerByNumber(playerIndexToThreaten);
             transform.position = target.mySlot.threateningPiecesLocation.position +
                                  new Vector3(Random.Range(-.5f, .5f), .5f, Random.Range(-.5f, .5f));

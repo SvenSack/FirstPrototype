@@ -73,6 +73,13 @@ MonoBehaviour:
   - EndGame
   - NobleWinDenied
   - RpcReturnNobleCheck
+  - RpcStealPiece
+  - RpcStealCard
+  - AnswerFavourCard
+  - RpcHandCard
+  - ReceiveLeaderChallenge
+  - RpcMoWTradeSecret
+  - ReceiveTradeGoods
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

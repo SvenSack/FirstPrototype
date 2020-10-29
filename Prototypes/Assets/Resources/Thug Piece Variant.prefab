@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   threatMaterial: {fileID: 2100000, guid: 4615af3339db6334fab22b7357b6415e, type: 2}
+  originPlayerNumber: 0
   damageValue: 1
 --- !u!1001 &7449478189776126708
 PrefabInstance:

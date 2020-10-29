@@ -60,6 +60,7 @@ MonoBehaviour:
   pieces: []
   roleRevealed: 0
   piecesThreateningMe: []
+  officeCampaign: 000000000000000000000000
 --- !u!114 &1349756622432304604
 MonoBehaviour:
   m_ObjectHideFlags: 0

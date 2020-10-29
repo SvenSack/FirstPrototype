@@ -129,7 +129,7 @@ namespace Gameplay
             AdjustPositions();
         }
 
-        public void AdjustPositions()
+        public virtual void AdjustPositions()
         { // called whenever one piece moves
             for (int i = 0; i < toggledOn.Count; i++)
             {

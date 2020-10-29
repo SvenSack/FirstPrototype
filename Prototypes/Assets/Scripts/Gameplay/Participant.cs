@@ -27,6 +27,7 @@ namespace Gameplay
         public bool roleRevealed;
         public List<ThreatPiece> piecesThreateningMe = new List<ThreatPiece>();
         public bool isDead { get; private set; }
+        public int[] officeCampaign = {0, 0, 0};
         
         private int health = 0;
         private TextMeshProUGUI coinCounter = null;
@@ -55,6 +56,22 @@ namespace Gameplay
             if (pv.IsMine && coinCounter.text != coins.ToString())
             {
                 coinCounter.text = coins.ToString();
+            }
+
+            foreach (var card in aHand)
+            {
+                if (card == null)
+                {
+                    aHand.Remove(card);
+                }
+            }
+            
+            foreach (var piece in pieces)
+            {
+                if (piece == null)
+                {
+                    pieces.Remove(piece);
+                }
             }
 
             if (pv.IsMine && GameMaster.Instance.isTesting)
@@ -322,6 +339,46 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void RpcStealPiece(byte pieceType, byte playerIndexWhoSteals)
+        {
+            if (pv.IsMine)
+            {
+                GameObject potPiece = LookForPiece((GameMaster.PieceType) pieceType, false);
+                if (potPiece != null)
+                {
+                    PhotonNetwork.Destroy(potPiece);
+                    GameMaster.Instance.FetchPlayerByNumber(playerIndexWhoSteals).pv.RPC("RpcAddPiece", RpcTarget.Others, pieceType, 1);
+                }
+            }
+        }
+        
+        [PunRPC]
+        public void RpcStealCard(byte cardType, byte playerIndexWhoSteals)
+        {
+            if (pv.IsMine)
+            {
+                // TODO add the ui selection to determine which card to give
+            }
+        }
+
+        [PunRPC]
+        public void AnswerFavourCard(bool isArtifact, byte indexOfPlayerWhoAsks)
+        {
+            if (pv.IsMine)
+            {
+                
+                foreach (var card in aHand)
+                {
+                    if (card.cardType == (GameMaster.CardType) 2 + Convert.ToInt32(isArtifact))
+                    {
+                        UIManager.Instance.AnswerFavourRequest(isArtifact, GameMaster.Instance.FetchPlayerByNumber(indexOfPlayerWhoAsks));
+                        break;
+                    }   
+                }
+            }
+        }
+
+        [PunRPC]
         public void RpcAddPiece(byte pieceIndex, int amount)
         {
             if (pv.IsMine)
@@ -343,6 +400,21 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void RpcHandCard(byte indexOfCard, byte typeOfCard)
+        {
+            if (pv.IsMine)
+            {
+                GameObject newCard = GameMaster.Instance.ConstructCard((GameMaster.CardType)typeOfCard, indexOfCard);
+                int handSize = aHand.Count;
+                newCard.transform.position = mySlot.aACardLocation.position + new Vector3(.2f*handSize,.3f,0);
+                newCard.transform.rotation = mySlot.aACardLocation.rotation;
+                Card cardPart = newCard.GetComponent<Card>();
+                cardPart.hoverLocation = mySlot.hoverLocation;
+                aHand.Add(cardPart);
+            }
+        }
+
+        [PunRPC]
         public void RpcReturnNobleCheck(byte playerIndexOfNoble)
         {
             if (pv.IsMine)
@@ -355,6 +427,17 @@ namespace Gameplay
                         break;
                     }
                 }
+            }
+        }
+
+        [PunRPC]
+        public void ReceiveLeaderChallenge(int amountOfCampaign, byte playerIndex)
+        {
+            if (pv.IsMine)
+            {
+                officeCampaign[0] = 1;
+                officeCampaign[1] = amountOfCampaign;
+                officeCampaign[2] = playerIndex;
             }
         }
 
@@ -622,6 +705,51 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void ReceiveTradeGoods(byte amountOfWorkers, byte amountOfThugs, byte amountOfAssassins,
+            byte amountPoisoned, List<byte> artifactsIndices, List<byte> actionsIndices, int coinAmount, byte playerIndex)
+        {
+            if (pv.IsMine)
+            {
+                // TODO check to make sure to have the playerindex sent and only then give
+                for (int i = 0; i < amountOfWorkers; i++)
+                {
+                    AddPiece(GameMaster.PieceType.Worker, false);
+                }
+                for (int i = 0; i < amountOfThugs; i++)
+                {
+                    AddPiece(GameMaster.PieceType.Thug, false);
+                }
+                for (int i = 0; i < amountOfAssassins; i++)
+                {
+                    AddPiece(GameMaster.PieceType.Assassin, false);
+                }
+                if (amountPoisoned > 0)
+                {
+                    LookForPiece(GameMaster.PieceType.Assassin, true).GetComponent<Piece>().ActivatePoison();
+                }
+                foreach (var ind in artifactsIndices)
+                {
+                    RpcHandCard(ind, 3); 
+                }
+                foreach (var ind in actionsIndices)
+                {
+                    RpcHandCard(ind, 2); 
+                }
+                AddCoin(coinAmount);
+            }
+        }
+
+        [PunRPC]
+        public void RpcMoWTradeSecret(string content, string header, byte targetedPlayer, byte secondaryPlayer)
+        {
+            if (pv.IsMine)
+            {
+                
+            }
+            // TODO create two button UI once the second inquiry is in, then add evidence based on selection to this and the other
+        }
+
+        [PunRPC]
         public void PassTurn(byte passingPlayerIndex)
         {
             GameMaster.Instance.passedPlayers[passingPlayerIndex] = true;
@@ -731,6 +859,11 @@ namespace Gameplay
                 
                 // TODO add vigilante reveal
                 // TODO add a remote pause to the selection events to fix the payment-threat glitch and to make selene work
+
+                if (officeCampaign[0] != 0)
+                {
+                    UIManager.Instance.RunForOffice();
+                }
                 
                 if (role == GameMaster.Role.Leader)
                 {

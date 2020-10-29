@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
@@ -25,6 +26,9 @@ namespace Gameplay
         [SerializeField] private DialUI[] threatResourceDials = new DialUI[2];
         [SerializeField] private AntiThreatAssigner antiThreatAssigner;
         [SerializeField] private GameObject[] endturnButtons = new GameObject[2];
+        [SerializeField] private TextMeshProUGUI[] favourTexts = new TextMeshProUGUI[2];
+        [SerializeField] private Toggle[] heistPartnerToggles = new Toggle[6];
+        [SerializeField] private TradeAssignmentChoice tradeAssigner;
         
         [ReadOnly] public GameObject[] pieceDistributionUIPrefabs = new GameObject[3];
         public static UIManager Instance;
@@ -35,6 +39,7 @@ namespace Gameplay
         public bool isSelecting;
         public Tile selectingTile;
         public bool isSelectingACard;
+        public bool isSelectingTCard;
         public bool isSelectingAPlayer;
         public bool isSelectingDistribution;
         public bool isSelectingThreatAssignment;
@@ -46,6 +51,7 @@ namespace Gameplay
         public DistributionPool[] jobDistributionPools = new DistributionPool[7];
         public bool turnEnded;
         public bool dead;
+        public DialUI runForOfficeDial;
         
         private bool isGrabbingUI;
         private TargetingReason typeOfTargeting;
@@ -58,6 +64,7 @@ namespace Gameplay
         private int[] threatContributedValues = new int[6];
         private LayerMask piecesMask;
         private List<SelectionType> selectionBuffer = new List<SelectionType>();
+        private Participant tradePartner;
 
         public enum SelectionType
         {
@@ -78,6 +85,15 @@ namespace Gameplay
             RoleRevealDecision,
             ThreatenPlayerDistribution,
             ThreatenedPlayerResolution,
+            LeaderFavour,
+            LeaderFavourPaymentArt,
+            LeaderFavourPaymentAct,
+            DealWithIt,
+            Heist,
+            RunForOffice,
+            Improvise,
+            TradePlayerSelect,
+            Trade,
             
         }
 
@@ -90,7 +106,8 @@ namespace Gameplay
             Potion,
             Serum,
             Poison,
-            Seduction
+            Seduction,
+            Trade
         }
     
         void Start()
@@ -105,6 +122,10 @@ namespace Gameplay
             foreach (var selector in playerSelectorsChar)
             {
                selector.SetActive(false); 
+            }
+            foreach (var tog in heistPartnerToggles)
+            {
+                tog.gameObject.SetActive(false); 
             }
             playerSelectorChar.SetActive(false);
             gRayCaster = GetComponent<GraphicRaycaster>();
@@ -169,10 +190,29 @@ namespace Gameplay
                             }
 
                             break;
+                        case SelectionType.LeaderFavourPaymentArt:
+                            if (CursorFollower.Instance.hoveredCard.cardType == GameMaster.CardType.Artifact)
+                            {
+                                SelectACardLFP(CursorFollower.Instance.hoveredCard, true);
+                            }
+
+                            break;
+                        case SelectionType.LeaderFavourPaymentAct:
+                            if (CursorFollower.Instance.hoveredCard.cardType == GameMaster.CardType.Action)
+                            {
+                                SelectACardLFP(CursorFollower.Instance.hoveredCard, false);
+                            }
+
+                            break;
                     }
                 }
                 
-                if (!isGrabbingPiece && !isSelecting && CursorFollower.Instance.isHoveringTCard)
+                if (!isGrabbingPiece && !isSelecting && CursorFollower.Instance.isHoveringTCard && isSelectingTCard)
+                {
+                    SelectTCardDWI(CursorFollower.Instance.hoveredCard);
+                }
+                
+                if (!isGrabbingPiece && !isSelecting && CursorFollower.Instance.isHoveringTCard && !isSelectingTCard)
                 {
                     StartSelection(SelectionType.ThreatCardAssignment, null);
                 }
@@ -241,7 +281,7 @@ namespace Gameplay
         { // this is used by all selection types to reset to a base state after use
             SelectionPopUps[(int)typeOfSelection].SetActive(false);
             isSelecting = false;
-            if (isSelectingACard)
+            if (isSelectingACard || isSelectingTCard)
             {
                 isSelectingACard = false;
                 CursorFollower.Instance.hoveredCard = null;
@@ -303,14 +343,24 @@ namespace Gameplay
                         case SelectionType.SerumPopUp:
                         case SelectionType.RoleRevealDecision:
                         case SelectionType.BlackMarket:
+                        case SelectionType.Heist:
+                        case SelectionType.LeaderFavour:
+                        case SelectionType.Improvise:
+                        case SelectionType.RunForOffice:
                             break;
                         // Above are popup with only buttons
                         case SelectionType.ThievesGuild:
                         case SelectionType.SellArtifacts:
+                        case SelectionType.LeaderFavourPaymentArt:
+                        case SelectionType.LeaderFavourPaymentAct:
                         case SelectionType.ThreatCardACardAssignment:
                             isSelectingACard = true;
                             break;
                         // Above are card selection popups
+                        case SelectionType.DealWithIt:
+                            isSelectingTCard = true;
+                            break;
+                        // Above are threat card selection popups (very rare)
                         case SelectionType.PostTurnPay:
                             postTurnPayAssigner.CreateToggles();
                             break;
@@ -320,12 +370,18 @@ namespace Gameplay
                         case SelectionType.ThreatenedPlayerResolution:
                             antiThreatAssigner.CreateToggles();
                             break;
+                        case SelectionType.Trade:
+                            tradeAssigner.CreateToggles();
+                            break;
                         // Above are two list assignment popups
                         case SelectionType.Poisoner:
                             typeOfTargeting = TargetingReason.Poison;
                             goto case SelectionType.CardPlayerTargeting;
                         case SelectionType.Seducer:
                             typeOfTargeting = TargetingReason.Seduction;
+                            goto case SelectionType.CardPlayerTargeting;
+                        case SelectionType.TradePlayerSelect:
+                            typeOfTargeting = TargetingReason.Trade;
                             goto case SelectionType.CardPlayerTargeting;
                         case SelectionType.CardPlayerTargeting:
                             isSelectingAPlayer = true;
@@ -446,6 +502,121 @@ namespace Gameplay
             }
         }
 
+        public void StartTrade()
+        {
+            // TODO make this an rpc agree upon thing
+            StartSelection(SelectionType.TradePlayerSelect, null);
+        }
+
+        public void ConfirmTrade()
+        {
+            byte amountOfWorkers = 0;
+            byte amountOfThugs = 0;
+            byte amountOfAssassins = 0;
+            byte amountPoisoned = 0;
+            List<byte> artifactsIndices = new List<byte>();
+            List<byte> actionsIndices = new List<byte>();
+            int informationAmount = 0;
+            int totalThreat = 0;
+            int coinAmount = tradeAssigner.coinDial.amount;
+            foreach (var good in tradeAssigner.tOn)
+            {
+                switch (good.type)
+                {
+                    case TradeAssignmentToggle.TradeGood.Piece:
+                        switch (good.representedPiece.type)
+                        {
+                            case GameMaster.PieceType.Worker:
+                                amountOfWorkers++;
+                                break;
+                            case GameMaster.PieceType.Thug:
+                                amountOfThugs++;
+                                break;
+                            case GameMaster.PieceType.Assassin:
+                                amountOfAssassins++;
+                                if (good.representedPiece.poisoned)
+                                {
+                                    amountPoisoned++;
+                                }
+                                break;
+                        }
+                        PhotonNetwork.Destroy(good.representedPiece.pv);
+                        break;
+                    case TradeAssignmentToggle.TradeGood.Card:
+                        if (good.representedCard.cardType == GameMaster.CardType.Artifact)
+                        {
+                            artifactsIndices.Add((byte)good.representedCard.cardIndex);
+                        }
+                        else
+                        {
+                            actionsIndices.Add((byte)good.representedCard.cardIndex);
+                        }
+                        PhotonNetwork.Destroy(good.representedCard.pv);
+                        break;
+                    case TradeAssignmentToggle.TradeGood.ThreateningPiece:
+                        totalThreat += good.threateningPiece.damageValue;
+                        good.threateningPiece.ThreatenPlayer(tradePartner.playerNumber);
+                        break;
+                    case TradeAssignmentToggle.TradeGood.Information:
+                        tradePartner.pv.RPC("RpcAddEvidence", RpcTarget.Others, good.infoPiece.content, good.infoPiece.header, good.infoPiece.isEvidence, (byte)good.infoPiece.evidenceTargetIndex);
+                        informationAmount++;
+                        participant.informationHand.Remove(good.infoPiece);
+                        break;
+                }
+            }
+            participant.RemoveCoins(coinAmount);
+            
+            int whisperNumber = GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfWhispers).playerNumber;
+            if (whisperNumber != participant.playerNumber && whisperNumber != tradePartner.playerNumber)
+            {
+                string head = CreateCharPlayerString(participant) + " traded with " + CreateCharPlayerString(tradePartner);
+                string content = CreateCharPlayerString(participant) + " gave away:\n";
+                if (amountOfWorkers > 0)
+                {
+                    content += amountOfWorkers + " Workers\n";
+                }
+                if (amountOfThugs > 0)
+                {
+                    content += amountOfThugs + " Thugs\n";
+                }
+                if (amountOfAssassins > 0)
+                {
+                    content += amountOfAssassins + " Assassins\n";
+                }
+                if (amountPoisoned > 0)
+                {
+                    content += amountPoisoned + " of which with poison\n";
+                }
+                if (coinAmount > 0)
+                {
+                    content += coinAmount + " coins\n";
+                }
+                if (informationAmount > 0)
+                {
+                    content += informationAmount + " pieces of Information\n";
+                }
+                if (actionsIndices.Count > 0)
+                {
+                    content += actionsIndices.Count + " Plans for Action\n";
+                }
+                if (artifactsIndices.Count > 0)
+                {
+                    content += artifactsIndices.Count + " Artifacts\n";
+                }
+                if (totalThreat > 0)
+                {
+                    content += "Threats totalling an amount of " + totalThreat;
+                }
+                GameMaster.Instance.FetchPlayerByNumber(whisperNumber).pv.RPC("RpcMoWTradeSecret", RpcTarget.Others, content, head,(byte) participant.playerNumber, (byte) tradePartner.playerNumber);
+            }
+            
+            tradePartner.pv.RPC("ReceiveTradeGoods", RpcTarget.Others, amountOfWorkers, amountOfThugs, amountOfAssassins, amountPoisoned, artifactsIndices, actionsIndices, coinAmount,
+                (byte) participant.playerNumber);
+            
+            tradeAssigner.DropAll();
+            ResetAfterSelect();
+        }
+
         public void RevealRole(bool endAfter)
         {
             for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
@@ -551,11 +722,29 @@ namespace Gameplay
                     switch ((GameMaster.Action)hoveredCard.cardIndex)
                     {
                         case GameMaster.Action.Improvise:
-                            // TODO card drawn, hovered, popup with selection, then loop back here if confirmed, execute twice
+                            StartSelection(SelectionType.Improvise, null);
+                            StartSelection(SelectionType.Improvise, null);
+                            // TODO make card accurate
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.DoubleAgent:
-                            // TODO implement once threat is in
+                            int indexOfGreatestThreat = -1;
+                            int greatestValue = 0;
+                            for (int i = 0; i < participant.piecesThreateningMe.Count; i++)
+                            {
+                                if (participant.piecesThreateningMe[i].damageValue > greatestValue)
+                                {
+                                    greatestValue = participant.piecesThreateningMe[i].damageValue;
+                                    indexOfGreatestThreat = i;
+                                }
+                            }
+                            ThreatPiece tp = participant.piecesThreateningMe[indexOfGreatestThreat];
+                            tp.thisPiece.pv.TransferOwnership(participant.pv.Owner);
+                            tp.originPlayerNumber = participant.playerNumber;
+                            tp.thisPiece.cam = participant.mySlot.perspective;
+                            tp.thisPiece.originBoard = null;
+                            tp.thisPiece.isPrivate = true;
+                            tp.thisPiece.ResetPiecePosition();
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.SecretCache:
@@ -564,7 +753,7 @@ namespace Gameplay
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.AskForFavours:
-                            // TODO selection UI with decision, then Leader pays and you gain
+                            StartSelection(SelectionType.LeaderFavour, null);
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.CallInBackup:
@@ -574,11 +763,11 @@ namespace Gameplay
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.ExecuteAHeist:
-                            // TODO multi toggle selection UI with decision, then those selected get coins
+                            StartSelection(SelectionType.Heist, null);
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.RunForOffice:
-                            // TODO selection UI with number input field and confirm, upon confirm you lose that much and the leader gets a bool flagged which acts at end of turn
+                            RunForOffice();
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.SwearTheOaths:
@@ -614,7 +803,7 @@ namespace Gameplay
                             PlayCard(hoveredCard);
                             break;
                         case GameMaster.Action.DealWithItYourself:
-                            // TODO add this once threat cards are in
+                            StartSelection(SelectionType.DealWithIt, null);
                             PlayCard(hoveredCard);
                             break;
                     }
@@ -634,6 +823,33 @@ namespace Gameplay
             {
                 targetedThreat.pv.RPC("Contribute", RpcTarget.All, participant.playerNumber, threatContributedValues);
             }
+            ResetAfterSelect();
+        }
+
+        public void ConfirmOfficeCampaign()
+        {
+            if (participant.officeCampaign[0] == 0)
+            {
+                GameMaster.Instance.FetchLeader().pv.RPC("ReceiveLeaderChallenge", RpcTarget.Others, runForOfficeDial.amount,(byte) participant.playerNumber);
+                PayAmountOwed(runForOfficeDial.amount);
+            }
+            else
+            {
+                PayAmountOwed(runForOfficeDial.amount);
+                if (runForOfficeDial.amount < participant.officeCampaign[1])
+                {
+                    // TODO give leader role to player at index participant.officeCampaign[2]
+                }
+
+                participant.officeCampaign[0] = 0;
+            }
+            ResetAfterSelect();
+        }
+
+        private void SelectACardLFP(Card hoveredCard, bool isArtifact)
+        {
+            inquirer.pv.RPC("RpcHandCard", RpcTarget.Others,(byte) hoveredCard.cardIndex, (byte)(2 + Convert.ToInt32(isArtifact)));
+            PhotonNetwork.Destroy(hoveredCard.GetComponent<PhotonView>());
             ResetAfterSelect();
         }
 
@@ -698,6 +914,18 @@ namespace Gameplay
             ResetAfterSelect();
             participant.AddCoin(4);
         }
+
+        private void SelectTCardDWI(Card hoveredCard)
+        {
+            PhotonNetwork.Destroy(hoveredCard.threat.pv);
+            byte index = (byte)participant.tHand.LastIndexOf(hoveredCard);
+            for (int j = 0; j < GameMaster.Instance.seatsClaimed; j++)
+            {
+                GameMaster.Instance.FetchPlayerByNumber(j).pv.RPC("RpcRemoveTCard", RpcTarget.All,index);
+            }
+            participant.RemoveHealth(1);
+            ResetAfterSelect();
+        }
         
         public void ConfirmBowChoice()
         { // this is used to confirm the bow choice decision (what you get when someone uses the bow card on you)
@@ -711,6 +939,63 @@ namespace Gameplay
             }
             ResetAfterSelect();
             
+        }
+        
+        public void SelectACardImp(bool isAction)
+        { // this confirms the black market selection UI
+            if (isAction)
+            {
+                participant.DrawACard(GameMaster.CardType.Action);
+            }
+            else
+            {
+                participant.DrawACard(GameMaster.CardType.Artifact);
+            }
+
+            ResetAfterSelect();
+        }
+
+        public void ConfirmHeist()
+        {
+            for (int i = 0; i < heistPartnerToggles.Length; i++)
+            {
+                if (heistPartnerToggles[i].isOn)
+                { 
+                    GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RpcAddCoin", RpcTarget.All, (byte) 3);
+                }
+            }
+        }
+
+        public void LeaderPaysCoins()
+        {
+            Participant leader = GameMaster.Instance.FetchLeader();
+            int amount = 0;
+            if (leader.coins > 1)
+            {
+                amount = 2;
+            }
+            else if(leader.coins > 0)
+            {
+                amount = 1;
+            }
+            leader.pv.RPC("RpcRemoveCoins", RpcTarget.Others, amount);
+            if (participant != leader)
+            {
+                participant.AddCoin(amount);
+            }
+            ResetAfterSelect();
+        }
+
+        public void StealPieceFromLeader(int typeToSteal)
+        {
+            GameMaster.Instance.FetchLeader().pv.RPC("RpcStealPiece", RpcTarget.Others, (byte) typeToSteal, (byte) participant.playerNumber);
+            ResetAfterSelect();
+        }
+        
+        public void StealCardFromLeader(int typeToSteal)
+        {
+            GameMaster.Instance.FetchLeader().pv.RPC("RpcStealCard", RpcTarget.Others, (byte) typeToSteal, (byte) participant.playerNumber);
+            ResetAfterSelect();
         }
 
         public void ConfirmAntiThreatAssignment()
@@ -776,6 +1061,10 @@ namespace Gameplay
                                 break;
                             case TargetingReason.Potion:
                                 target.pv.RPC("RpcAddHealth", RpcTarget.All, 2);
+                                break;
+                            case TargetingReason.Trade:
+                                StartSelection(SelectionType.Trade, null);
+                                tradePartner = target;
                                 break;
                             default:
                                 target.pv.RPC("BaubleInquiry", RpcTarget.Others, (byte)typeOfTargeting, (byte)participant.playerNumber);
@@ -867,6 +1156,43 @@ namespace Gameplay
             turnEnded = false;
             endturnButtons[0].SetActive(true);
             endturnButtons[1].SetActive(false);
+        }
+
+        public void RunForOffice()
+        {
+            int totalCoins = participant.coins;
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfCoin).playerNumber ==
+                participant.playerNumber)
+            {
+                totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfCoin].GetComponent<Board>().coins;
+            }
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfGoods).playerNumber ==
+                participant.playerNumber)
+            {
+                totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfGoods].GetComponent<Board>().coins;
+            }
+            if (GameMaster.Instance.FetchPlayerByJob(GameMaster.Job.MasterOfClubs).playerNumber ==
+                participant.playerNumber)
+            {
+                totalCoins += GameMaster.Instance.jobBoards[(int) GameMaster.Job.MasterOfClubs].GetComponent<Board>().coins;
+            }
+            runForOfficeDial.maxAmount = totalCoins;
+            StartSelection(SelectionType.RunForOffice, null);
+        }
+
+        public void AnswerFavourRequest(bool isArtifact, Participant requestor)
+        {
+            inquirer = participant;
+            if (isArtifact)
+            {
+                favourTexts[0].text = "Select which Artifact to give to " + CreateCharPlayerString(requestor);
+                StartSelection(SelectionType.LeaderFavourPaymentArt, null);
+            }
+            else
+            {
+                favourTexts[0].text = "Select which Action to give to " + CreateCharPlayerString(requestor);
+                StartSelection(SelectionType.LeaderFavourPaymentAct, null);
+            }
         }
         
         private void CardSelectTarget(TargetingReason reason)
@@ -985,9 +1311,11 @@ namespace Gameplay
             for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
             {
                 Participant part = GameMaster.Instance.FetchPlayerByNumber(i);
-                playerSelectorsChar[i].SetActive(true);
                 string nameText = CreateCharPlayerString(part);
+                playerSelectorsChar[i].SetActive(true);
                 playerSelectorsChar[i].GetComponentInChildren<TextMeshProUGUI>().text = nameText;
+                heistPartnerToggles[i].gameObject.SetActive(true);
+                heistPartnerToggles[i].GetComponentInChildren<TextMeshProUGUI>().text = nameText;
                 workerDistributionPools[i + 1].gameObject.SetActive(true);
                 workerDistributionPools[i + 1].labelText.text = nameText;
                 jobDistributionPools[i + 1].gameObject.SetActive(true);
