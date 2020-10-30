@@ -9,7 +9,7 @@ using Random = UnityEngine.Random;
 
 namespace Gameplay
 {
-    public class GameMaster : MonoBehaviourPunCallbacks
+    public class GameMaster : MonoBehaviourPunCallbacks, IPunObservable
     {
         #region Lists
 
@@ -92,6 +92,7 @@ namespace Gameplay
         public GameObject threatObject = null;
         public bool[] passedPlayers;
         public int[] roleRevealTurns = new int[7];
+        public bool mustWait;
 
         #region Enums
 
@@ -489,6 +490,39 @@ namespace Gameplay
             }
         }
 
+        public void MakeNewLeader()
+        {
+            ThreatPiece[] tps = FindObjectsOfType<ThreatPiece>();
+            List<int> forceValues = new List<int>();
+            foreach (var slot in playerSlots)
+            {
+                Participant part = slot.gameObject.GetComponent<PlayerSlot>().player;
+                if (!part.isDead && !(part.roleRevealed && (part.role == Role.Paladin || part.role == Role.Vigilante)))
+                {
+                    int forceValue = 0;
+                    foreach (var tp in tps)
+                    {
+                        if (tp.originPlayerNumber == part.playerNumber)
+                        {
+                            forceValue += tp.damageValue;
+                        }
+                    }
+                    forceValues.Add(forceValue);
+                }
+                else forceValues.Add(0);
+            }
+            int maxValue = Mathf.Max(forceValues.ToArray());
+            for (int i = 0; i < forceValues.Count; i++)
+            {
+                if (forceValues[i] == maxValue)
+                {
+                    FetchLeader().isLeader = false;
+                    FetchPlayerByNumber(i).isLeader = true;
+                    return;
+                }
+            }
+        }
+
         #region Fetches
         // all of these are helper functions for other classes to access the correct participants. this happens very often since I am using their index number when sending data via RPC
         public Participant FetchPlayerByNumber(int playerNumber)
@@ -524,8 +558,28 @@ namespace Gameplay
 
         public Participant FetchLeader()
         {
-            playerRoles.TryGetValue(Role.Leader, out int playerNumber);
-            return FetchPlayerByNumber(playerNumber);
+            foreach (var slot in playerSlots)
+            {
+                Participant part = slot.gameObject.GetComponent<PlayerSlot>().player;
+                if (part.isLeader)
+                {
+                    return part;
+                }
+            }
+            Debug.LogAssertion("Things went wrong");
+            return null;
+        }
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+            if (stream.IsWriting)
+            {
+                stream.SendNext(mustWait);
+            }
+            else
+            {
+                mustWait = (bool) stream.ReceiveNext();
+            }
         }
     }
 

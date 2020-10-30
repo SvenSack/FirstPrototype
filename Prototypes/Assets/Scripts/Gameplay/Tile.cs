@@ -248,13 +248,13 @@ namespace Gameplay
                                 ToggleUsed();
                                 return true;
                             case TileType.ForgeEvidence:
-                                // TODO make UI to select a target player to write about, and then get one to write evidence
+                                UIManager.Instance.StartSelection(UIManager.SelectionType.ForgeEvidence, null);
                                 ToggleUsed();
                                 return true;
                             case TileType.FalsifyBooks:
                                 if (player.informationHand.Count > 0)
                                 {
-                                    // TODO make UI to select a piece of information, then make ome to edit that text
+                                    UIManager.Instance.StartInformationSelection(true);
                                     ToggleUsed();
                                     return true;
                                 }
@@ -262,7 +262,7 @@ namespace Gameplay
                             case TileType.BlackmailNobility:
                                 if (player.informationHand.Count > 0)
                                 {
-                                    // TODO make UI to select a piece of information, then bind the drawing of actions to that
+                                    UIManager.Instance.StartInformationSelection(false);
                                     ToggleUsed();
                                     return true;
                                 }

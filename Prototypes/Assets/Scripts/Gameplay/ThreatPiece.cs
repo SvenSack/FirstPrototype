@@ -14,6 +14,7 @@ namespace Gameplay
         public Piece thisPiece { get; private set; }
         public bool isThreatening { get; private set; }
         public int damageValue;
+        public bool isVigilantePiece;
         
         private Material defaultMaterial;
         private MeshRenderer meshRen;
@@ -29,6 +30,11 @@ namespace Gameplay
 
         public void ReturnToOwner()
         {
+            if (isVigilantePiece)
+            {
+                PhotonNetwork.Destroy(gameObject);
+                return;
+            }
             isThreatening = false;
             transform.position = GameMaster.Instance.FetchPlayerByNumber(originPlayerNumber).mySlot.pieceLocation
                 .position + new Vector3(Random.Range(-.5f, .5f), .5f, Random.Range(-.5f, .5f));

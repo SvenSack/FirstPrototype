@@ -8,6 +8,8 @@ namespace Gameplay
 {
     public class DistributionPool : MonoBehaviour
     {
+        [SerializeField] private HoverToolTip hToolTip;
+        
         public float rowSize;
         public float columnSize;
         public int columns;
@@ -64,6 +66,7 @@ namespace Gameplay
                 if (!confirmButton.interactable)
                 {
                     confirmButton.interactable = true;
+                    if (hToolTip != null) hToolTip.canHover = false;
                 }
                 if (isJobPool)
                 {
@@ -83,24 +86,18 @@ namespace Gameplay
                     DistributionPool leaderPool = UIManager.Instance.jobDistributionPools[GameMaster.Instance.FetchLeader().playerNumber + 1];
                     if (leaderPool.objectsHeld.Count == highestValue)
                     {
-                        if (GameMaster.Instance.FetchLeader().character == GameMaster.Character.OldFox)
+                        if (GameMaster.Instance.seatsClaimed != 1)
                         {
-                            // this is ok I think
-                        }
-                        else
-                        {
-                            if (GameMaster.Instance.seatsClaimed != 1)
-                            {
-                                confirmButton.interactable = false;
-                            }
+                            confirmButton.interactable = false;
+                            if (hToolTip != null) hToolTip.canHover = true;
                         }
                     }
-                    // TODO add explanation hover in game UI of confirm button to make clear why this happens
                 }
             }
             else if(confirmButton != null && confirmButton.interactable)
             {
                 confirmButton.interactable = false;
+                if (hToolTip != null) hToolTip.canHover = true;
             }
         }
 
@@ -161,6 +158,8 @@ namespace Gameplay
             }
             objectsHeld = new List<DistributionPieceUI>();
         }
+
+        
         
         public virtual void AdjustPositions()
         { // this places objects correctly to avoid gaps

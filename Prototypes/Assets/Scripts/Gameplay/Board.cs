@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Photon.Pun;
+using Photon.Realtime;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace Gameplay
 {
-    public class Board : MonoBehaviour
+    public class Board : MonoBehaviour, IPunObservable
     {
         [SerializeField] private TextMeshProUGUI coinCounter;
         [SerializeField] private Tile[] tiles = new Tile[4];
@@ -19,6 +20,7 @@ namespace Gameplay
         public List<GameObject> pieces = new List<GameObject>();
         public PhotonView pv;
         public Participant jobHolder;
+        public bool seleneClaimed;
         
         private List<GameObject> coinObjects = new List<GameObject>();
 
@@ -95,6 +97,12 @@ namespace Gameplay
             }
             return null;
         }
+
+        public void SeleneClaim(Player newOwner)
+        {
+            pv.TransferOwnership(newOwner);
+            seleneClaimed = true;
+        }
         
         public void DrawACard()
         { // draws a card to this board
@@ -106,6 +114,18 @@ namespace Gameplay
             cardPart.hoverLocation = jobHolder.mySlot.hoverLocation;
             cardPart.isPrivate = false;
             artifactHand.Add(cardPart);
+        }
+
+        public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+        {
+            if (stream.IsWriting)
+            {
+                stream.SendNext(seleneClaimed);
+            }
+            else
+            {
+                seleneClaimed = (bool) stream.ReceiveNext();
+            }
         }
     }
 }

@@ -29,7 +29,11 @@ namespace Gameplay
         [SerializeField] private TextMeshProUGUI[] favourTexts = new TextMeshProUGUI[2];
         [SerializeField] private Toggle[] heistPartnerToggles = new Toggle[6];
         [SerializeField] private TradeAssignmentChoice tradeAssigner;
-        
+        [SerializeField] private TextMeshProUGUI[] evidenceInputs = new TextMeshProUGUI[2];
+        [SerializeField] private InformationSelection infoSelect;
+        [SerializeField] private TextMeshProUGUI tradeRequestText;
+        [SerializeField] private TextMeshProUGUI[] tradeSecretButtons = new TextMeshProUGUI[2];
+
         [ReadOnly] public GameObject[] pieceDistributionUIPrefabs = new GameObject[3];
         public static UIManager Instance;
         public bool isGrabbingPiece;
@@ -52,6 +56,7 @@ namespace Gameplay
         public bool turnEnded;
         public bool dead;
         public DialUI runForOfficeDial;
+        public Participant tradePartner;
         
         private bool isGrabbingUI;
         private TargetingReason typeOfTargeting;
@@ -64,7 +69,8 @@ namespace Gameplay
         private int[] threatContributedValues = new int[6];
         private LayerMask piecesMask;
         private List<SelectionType> selectionBuffer = new List<SelectionType>();
-        private Participant tradePartner;
+        private bool isSelectingForFalsify;
+        private MoWTradeSecret[] secrets = new MoWTradeSecret[2];
 
         public enum SelectionType
         {
@@ -94,7 +100,12 @@ namespace Gameplay
             Improvise,
             TradePlayerSelect,
             Trade,
-            
+            ForgeEvidence,
+            SelectInformation,
+            TradeRequest,
+            MoWTradeSecretChoice,
+            SeleneJobClaim,
+            VigilanteReveal
         }
 
         public enum TargetingReason
@@ -107,9 +118,11 @@ namespace Gameplay
             Serum,
             Poison,
             Seduction,
-            Trade
+            Trade,
+            ForgeEvidence,
+            VigilanteReveal
         }
-    
+
         void Start()
         {
             Instance = this;
@@ -330,7 +343,7 @@ namespace Gameplay
             if (!turnEnded && !dead)
             {
             
-                if (!isSelecting)
+                if (!isSelecting && !GameMaster.Instance.mustWait)
                 {
                     defaultUI.SetActive(false);
                     selectingTile = thisTile;
@@ -345,7 +358,11 @@ namespace Gameplay
                         case SelectionType.BlackMarket:
                         case SelectionType.Heist:
                         case SelectionType.LeaderFavour:
+                        case SelectionType.SelectInformation:
                         case SelectionType.Improvise:
+                        case SelectionType.TradeRequest:
+                        case SelectionType.MoWTradeSecretChoice:
+                        case SelectionType.SeleneJobClaim:
                         case SelectionType.RunForOffice:
                             break;
                         // Above are popup with only buttons
@@ -377,8 +394,14 @@ namespace Gameplay
                         case SelectionType.Poisoner:
                             typeOfTargeting = TargetingReason.Poison;
                             goto case SelectionType.CardPlayerTargeting;
+                        case SelectionType.VigilanteReveal:
+                            typeOfTargeting = TargetingReason.VigilanteReveal;
+                            goto case SelectionType.CardPlayerTargeting;
                         case SelectionType.Seducer:
                             typeOfTargeting = TargetingReason.Seduction;
+                            goto case SelectionType.CardPlayerTargeting;
+                        case SelectionType.ForgeEvidence:
+                            typeOfTargeting = TargetingReason.ForgeEvidence;
                             goto case SelectionType.CardPlayerTargeting;
                         case SelectionType.TradePlayerSelect:
                             typeOfTargeting = TargetingReason.Trade;
@@ -411,10 +434,15 @@ namespace Gameplay
                             break;
                         case SelectionType.JobAssignment:
                             isSelectingDistribution = true;
-                            foreach (var t in jobSelectionUIPrefabs)
+                            for (var index = 0; index < jobSelectionUIPrefabs.Length; index++)
                             {
-                                jobDistributionPools[0].ChangeItem(Instantiate(t, transform), true);
+                                var t = jobSelectionUIPrefabs[index];
+                                if (!GameMaster.Instance.jobBoards[index].GetComponent<Board>().seleneClaimed)
+                                {
+                                    jobDistributionPools[0].ChangeItem(Instantiate(t, transform), true);
+                                }
                             }
+
                             break;
                         // Above are player pool assignment popups
                         case SelectionType.ThreatCardAssignment:
@@ -500,12 +528,6 @@ namespace Gameplay
                 ResetAfterSelect();
                 targetedThreat.pv.RPC("Contribute", RpcTarget.All, participant.playerNumber, threatContributedValues);
             }
-        }
-
-        public void StartTrade()
-        {
-            // TODO make this an rpc agree upon thing
-            StartSelection(SelectionType.TradePlayerSelect, null);
         }
 
         public void ConfirmTrade()
@@ -612,8 +634,27 @@ namespace Gameplay
             
             tradePartner.pv.RPC("ReceiveTradeGoods", RpcTarget.Others, amountOfWorkers, amountOfThugs, amountOfAssassins, amountPoisoned, artifactsIndices, actionsIndices, coinAmount,
                 (byte) participant.playerNumber);
+
+            participant.awaitingTrade[tradePartner.playerNumber] = false;
             
             tradeAssigner.DropAll();
+            ResetAfterSelect();
+        }
+
+        public void SelectMoWTS(bool isFirst)
+        {
+            if (isFirst)
+            {
+                participant.RpcAddEvidence(secrets[0].content, secrets[0].header, true, secrets[0].targetedPlayer);
+                GameMaster.Instance.FetchPlayerByNumber(secrets[1].secondaryPlayer).pv.RPC("RpcAddEvidence", RpcTarget.Others, secrets[1].content, secrets[1].header, true, secrets[1].targetedPlayer);
+            }
+            else
+            {
+                participant.RpcAddEvidence(secrets[1].content, secrets[1].header, true, secrets[1].targetedPlayer);
+                GameMaster.Instance.FetchPlayerByNumber(secrets[0].secondaryPlayer).pv.RPC("RpcAddEvidence", RpcTarget.Others, secrets[0].content, secrets[0].header, true, secrets[0].targetedPlayer);
+            }
+            participant.DropOutstandingTS(secrets[0]);
+            participant.DropOutstandingTS(secrets[1]);
             ResetAfterSelect();
         }
 
@@ -622,6 +663,12 @@ namespace Gameplay
             for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
             {
                 GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RevealRoleOf", RpcTarget.All, (byte) participant.playerNumber);
+            }
+
+            if ((participant.role == GameMaster.Role.Paladin || participant.role == GameMaster.Role.Vigilante) &&
+                participant.isLeader)
+            {
+                GameMaster.Instance.MakeNewLeader();
             }
 
             if (endAfter)
@@ -838,7 +885,8 @@ namespace Gameplay
                 PayAmountOwed(runForOfficeDial.amount);
                 if (runForOfficeDial.amount < participant.officeCampaign[1])
                 {
-                    // TODO give leader role to player at index participant.officeCampaign[2]
+                    GameMaster.Instance.FetchPlayerByNumber(participant.officeCampaign[2]).isLeader = true;
+                    participant.isLeader = false;
                 }
 
                 participant.officeCampaign[0] = 0;
@@ -850,6 +898,57 @@ namespace Gameplay
         {
             inquirer.pv.RPC("RpcHandCard", RpcTarget.Others,(byte) hoveredCard.cardIndex, (byte)(2 + Convert.ToInt32(isArtifact)));
             PhotonNetwork.Destroy(hoveredCard.GetComponent<PhotonView>());
+            ResetAfterSelect();
+        }
+
+        public void ConfirmTradeRequest()
+        {
+            tradePartner.pv.RPC("StartTrade", RpcTarget.Others,(byte) participant.playerNumber);
+            participant.awaitingTrade[tradePartner.playerNumber] = true;
+            StartSelection(SelectionType.Trade, null);
+            ResetAfterSelect();
+        }
+
+        public void StartInformationSelection(bool isFalsify)
+        {
+            isSelectingForFalsify = isFalsify;
+            StartSelection(SelectionType.SelectInformation, null);
+            infoSelect.CreateButtons();
+            if (isFalsify)
+            {
+                infoSelect.headLine.text = "Select which information to edit";
+            }
+            else
+            {
+                infoSelect.headLine.text = "Select which information to sell";
+            }
+        }
+
+        public void ConfirmInformationSelection(InformationPiece info)
+        {
+            if (!isSelectingForFalsify)
+            {
+                participant.informationHand.Remove(info);
+                participant.DrawACard(GameMaster.CardType.Action);
+                participant.DrawACard(GameMaster.CardType.Action);
+                infoSelect.DropAll();
+                ResetAfterSelect();
+            }
+            else
+            {
+                participant.informationHand.Remove(info);
+                infoSelect.DropAll();
+                ResetAfterSelect();
+                StartSelection(SelectionType.ForgeEvidence, null);
+                playerSelectorsChar[info.evidenceTargetIndex].GetComponent<Toggle>().isOn = true;
+                evidenceInputs[0].text = info.header;
+                evidenceInputs[0].text = info.content;
+            }
+        }
+
+        public void SelectJobSelene(int jobIndex)
+        {
+            GameMaster.Instance.jobBoards[jobIndex].GetComponent<Board>().SeleneClaim(participant.pv.Owner);
             ResetAfterSelect();
         }
 
@@ -876,6 +975,7 @@ namespace Gameplay
                 GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("RpcAddPiece", RpcTarget.All, (byte)GameMaster.PieceType.Worker, amount);
                 workerDistributionPools[i+1].DropPool();
             }
+            GameMaster.Instance.mustWait = false;
             ResetAfterSelect();
         }
 
@@ -1062,9 +1162,19 @@ namespace Gameplay
                             case TargetingReason.Potion:
                                 target.pv.RPC("RpcAddHealth", RpcTarget.All, 2);
                                 break;
+                            case TargetingReason.ForgeEvidence:
+                                participant.RpcAddEvidence(evidenceInputs[1].text, evidenceInputs[0].text, true,(byte) target.playerNumber);
+                                break;
                             case TargetingReason.Trade:
-                                StartSelection(SelectionType.Trade, null);
+                                participant.pv.RPC("RequestTrade", RpcTarget.Others,(byte) participant.playerNumber);
                                 tradePartner = target;
+                                break;
+                            case TargetingReason.VigilanteReveal:
+                                GameObject inst = PhotonNetwork.Instantiate("vigilanteRevealPiece", Vector3.zero,
+                                    Quaternion.identity);
+                                ThreatPiece tp = inst.GetComponent<ThreatPiece>();
+                                tp.ThreatenPlayer(target.playerNumber);
+                                tp.originPlayerNumber = participant.playerNumber;
                                 break;
                             default:
                                 target.pv.RPC("BaubleInquiry", RpcTarget.Others, (byte)typeOfTargeting, (byte)participant.playerNumber);
@@ -1158,6 +1268,13 @@ namespace Gameplay
             endturnButtons[1].SetActive(false);
         }
 
+        public void RequestTradePopup(Participant requestPartner)
+        {
+            tradeRequestText.text = CreateCharPlayerString(requestPartner) + " wants to trade with you, are you ok with this ?";
+            tradePartner = requestPartner;
+            StartSelection(SelectionType.TradeRequest, null);
+        }
+
         public void RunForOffice()
         {
             int totalCoins = participant.coins;
@@ -1222,6 +1339,18 @@ namespace Gameplay
             }
             cardTargetingText.text = newText;
             StartSelection(SelectionType.CardPlayerTargeting, null);
+        }
+
+        public void CreateMoWTSPopup(MoWTradeSecret secret1, MoWTradeSecret secret2)
+        {
+            secrets[0] = secret1;
+            secrets[1] = secret2;
+            for (int i = 0; i < 2; i++)
+            {
+                tradeSecretButtons[i].text =
+                    CreateCharPlayerString(GameMaster.Instance.FetchPlayerByNumber(secrets[i].targetedPlayer));
+            }
+            StartSelection(SelectionType.MoWTradeSecretChoice, null);
         }
 
         public void PayAmountOwed(int owed)

@@ -25,9 +25,11 @@ namespace Gameplay
         public List<GameObject> pieces = new List<GameObject>();
         public List<InformationPiece> informationHand = new List<InformationPiece>();
         public bool roleRevealed;
+        public bool isLeader;
         public List<ThreatPiece> piecesThreateningMe = new List<ThreatPiece>();
         public bool isDead { get; private set; }
         public int[] officeCampaign = {0, 0, 0};
+        public bool[] awaitingTrade = {false, false, false, false, false, false, false};
         
         private int health = 0;
         private TextMeshProUGUI coinCounter = null;
@@ -35,6 +37,7 @@ namespace Gameplay
         private List<GameObject> healthObjects = new List<GameObject>();
         private bool isWaitingForNobleWin;
         private Coroutine nobleWin;
+        private List<MoWTradeSecret> outStandingTrades = new List<MoWTradeSecret>();
 
         private void Start()
         {
@@ -177,6 +180,11 @@ namespace Gameplay
             }
         }
 
+        public void DropOutstandingTS(MoWTradeSecret secret)
+        {
+            outStandingTrades.Remove(secret);
+        }
+
         public void RemoveHealth(byte amount)
         {
             for (int i = 0; i < amount; i++)
@@ -192,6 +200,10 @@ namespace Gameplay
             if (health < 1)
             {
                 GameOver(false);
+                if (role == GameMaster.Role.Leader)
+                {
+                    GameMaster.Instance.MakeNewLeader();
+                }
                 Participant[] participants = FindObjectsOfType<Participant>();
                 List<Participant> alivePlayers = new List<Participant>();
                 foreach (var p in participants)
@@ -226,6 +238,7 @@ namespace Gameplay
 
         public void EndTheGame()
         {
+            GameMaster.Instance.mustWait = true;
             for (int i = 0; i < GameMaster.Instance.seatsClaimed; i++)
             {
                 GameMaster.Instance.FetchPlayerByNumber(i).pv.RPC("EndGame", RpcTarget.AllBuffered);
@@ -237,6 +250,40 @@ namespace Gameplay
             isWaitingForNobleWin = false;
             StopCoroutine(nobleWin);
             GameOver(false);
+        }
+
+        IEnumerator WaitForTradeConfirm(byte amountOfWorkers, byte amountOfThugs, byte amountOfAssassins,
+            byte amountPoisoned, List<byte> artifactsIndices, List<byte> actionsIndices, int coinAmount, byte playerIndex)
+        {
+            while (awaitingTrade[playerIndex])
+            {
+                yield return new WaitForSeconds(1);
+            }
+            for (int i = 0; i < amountOfWorkers; i++)
+            {
+                AddPiece(GameMaster.PieceType.Worker, false);
+            }
+            for (int i = 0; i < amountOfThugs; i++)
+            {
+                AddPiece(GameMaster.PieceType.Thug, false);
+            }
+            for (int i = 0; i < amountOfAssassins; i++)
+            {
+                AddPiece(GameMaster.PieceType.Assassin, false);
+            }
+            if (amountPoisoned > 0)
+            {
+                LookForPiece(GameMaster.PieceType.Assassin, true).GetComponent<Piece>().ActivatePoison();
+            }
+            foreach (var ind in artifactsIndices)
+            {
+                RpcHandCard(ind, 3); 
+            }
+            foreach (var ind in actionsIndices)
+            {
+                RpcHandCard(ind, 2); 
+            }
+            AddCoin(coinAmount);
         }
 
         IEnumerator WaitForNobleWin()
@@ -256,7 +303,7 @@ namespace Gameplay
             UIManager.Instance.ResetAfterSelect();
             if (hasWon)
             {
-                
+                // TODO add end screen
             }
         }
 
@@ -293,6 +340,7 @@ namespace Gameplay
             if (role == GameMaster.Role.Leader)
             {
                 UIManager.Instance.RevealRole(false);
+                isLeader = true;
             }
 
             if (role == GameMaster.Role.Noble)
@@ -349,15 +397,6 @@ namespace Gameplay
                     PhotonNetwork.Destroy(potPiece);
                     GameMaster.Instance.FetchPlayerByNumber(playerIndexWhoSteals).pv.RPC("RpcAddPiece", RpcTarget.Others, pieceType, 1);
                 }
-            }
-        }
-        
-        [PunRPC]
-        public void RpcStealCard(byte cardType, byte playerIndexWhoSteals)
-        {
-            if (pv.IsMine)
-            {
-                // TODO add the ui selection to determine which card to give
             }
         }
 
@@ -442,6 +481,26 @@ namespace Gameplay
         }
 
         [PunRPC]
+        public void RequestTrade(byte playerIndex)
+        {
+            if (pv.IsMine)
+            {
+                UIManager.Instance.RequestTradePopup(GameMaster.Instance.FetchPlayerByNumber(playerIndex));
+            }
+        }
+
+        [PunRPC]
+        public void StartTrade(byte playerIndex)
+        {
+            if (pv.IsMine)
+            {
+                UIManager.Instance.StartSelection(UIManager.SelectionType.Trade, null);
+                UIManager.Instance.tradePartner = GameMaster.Instance.FetchPlayerByNumber(playerIndex);
+                awaitingTrade[playerIndex] = true;
+            }
+        }
+
+        [PunRPC]
         public void NobleWinDenied()
         {
             if (pv.IsMine && isWaitingForNobleWin)
@@ -509,10 +568,6 @@ namespace Gameplay
             {
                 switch (role)
                 {
-                    case GameMaster.Role.Leader:
-                        
-                        GameOver(true);
-                        break;
                     case GameMaster.Role.Rogue:
                         if (coins >= 20)
                         {
@@ -552,6 +607,11 @@ namespace Gameplay
                         nobleWin = StartCoroutine(WaitForNobleWin());
                         break;
                     default:
+                        if (isLeader)
+                        {
+                            GameOver(true);
+                            break;
+                        }
                         GameOver(false);
                         break;
                 }
@@ -710,32 +770,8 @@ namespace Gameplay
         {
             if (pv.IsMine)
             {
-                // TODO check to make sure to have the playerindex sent and only then give
-                for (int i = 0; i < amountOfWorkers; i++)
-                {
-                    AddPiece(GameMaster.PieceType.Worker, false);
-                }
-                for (int i = 0; i < amountOfThugs; i++)
-                {
-                    AddPiece(GameMaster.PieceType.Thug, false);
-                }
-                for (int i = 0; i < amountOfAssassins; i++)
-                {
-                    AddPiece(GameMaster.PieceType.Assassin, false);
-                }
-                if (amountPoisoned > 0)
-                {
-                    LookForPiece(GameMaster.PieceType.Assassin, true).GetComponent<Piece>().ActivatePoison();
-                }
-                foreach (var ind in artifactsIndices)
-                {
-                    RpcHandCard(ind, 3); 
-                }
-                foreach (var ind in actionsIndices)
-                {
-                    RpcHandCard(ind, 2); 
-                }
-                AddCoin(coinAmount);
+                StartCoroutine(WaitForTradeConfirm(amountOfWorkers, amountOfThugs, amountOfAssassins,
+                amountPoisoned, artifactsIndices, actionsIndices, coinAmount, playerIndex));
             }
         }
 
@@ -744,9 +780,18 @@ namespace Gameplay
         {
             if (pv.IsMine)
             {
-                
+                MoWTradeSecret ts = new MoWTradeSecret(content, header, targetedPlayer, secondaryPlayer);
+                foreach (var item in outStandingTrades)
+                {
+                    if (item.secondaryPlayer == targetedPlayer && item.targetedPlayer == secondaryPlayer)
+                    {
+                        
+                        outStandingTrades.Remove(item);
+                        return;
+                    }
+                }
+                outStandingTrades.Add(ts);
             }
-            // TODO create two button UI once the second inquiry is in, then add evidence based on selection to this and the other
         }
 
         [PunRPC]
@@ -782,6 +827,11 @@ namespace Gameplay
                     if (role == GameMaster.Role.Noble)
                     {
                         AddCoin(10);
+                    }
+
+                    if (role == GameMaster.Role.Vigilante)
+                    {
+                        UIManager.Instance.StartSelection(UIManager.SelectionType.VigilanteReveal, null);
                     }
                 }
             }
@@ -823,10 +873,17 @@ namespace Gameplay
                         case GameMaster.Character.OldFox:
                             if (GameMaster.Instance.turnCounter % 2 == 0)
                             {
-                                // TODO create ui selection to pick a job, and add a bool to let the leader know this happened
+                                GameMaster.Instance.mustWait = true;
+                                foreach (var board in GameMaster.Instance.jobBoards)
+                                {
+                                    board.GetComponent<Board>().seleneClaimed = false;
+                                }
+                                UIManager.Instance.StartSelection(UIManager.SelectionType.SeleneJobClaim, null);
                             }
                             break;
                     }
+                    
+                    // TODO fix bug with unpaid threat
 
                     if (role == GameMaster.Role.Gangster && roleRevealed)
                     {
@@ -856,17 +913,15 @@ namespace Gameplay
                         UIManager.Instance.StartSelection(UIManager.SelectionType.ThreatenedPlayerResolution, null);
                     }
                 }
-                
-                // TODO add vigilante reveal
-                // TODO add a remote pause to the selection events to fix the payment-threat glitch and to make selene work
 
                 if (officeCampaign[0] != 0)
                 {
                     UIManager.Instance.RunForOffice();
                 }
                 
-                if (role == GameMaster.Role.Leader)
+                if (isLeader)
                 {
+                    GameMaster.Instance.mustWait = true;
                     if (!isFirst)
                     {
                         for (var i = 0; i < tHand.Count; i++)
@@ -933,12 +988,30 @@ namespace Gameplay
             {
                 stream.SendNext(coins);
                 stream.SendNext(isDead);
+                stream.SendNext(isLeader);
             }
             else
             {
                 coins = (int)stream.ReceiveNext();
                 isDead = (bool) stream.ReceiveNext();
+                isLeader = (bool) stream.ReceiveNext();
             }
         }
+    }
+}
+
+public class MoWTradeSecret
+{
+    public string content;
+    public string header;
+    public byte targetedPlayer;
+    public byte secondaryPlayer;
+
+    public MoWTradeSecret(string _content, string _header, byte _targetedPlayer, byte _secondaryPlayer)
+    {
+        content = _content;
+        header = _header;
+        targetedPlayer = _targetedPlayer;
+        secondaryPlayer = _secondaryPlayer;
     }
 }

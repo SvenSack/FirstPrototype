@@ -80,6 +80,8 @@ MonoBehaviour:
   - ReceiveLeaderChallenge
   - RpcMoWTradeSecret
   - ReceiveTradeGoods
+  - RequestTrade
+  - StartTrade
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

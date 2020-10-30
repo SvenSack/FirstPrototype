@@ -212,6 +212,9 @@
             <e p="DistributionPieceUI.cs" t="Include" />
             <e p="DistributionPool.cs" t="Include" />
             <e p="GameMaster.cs" t="Include" />
+            <e p="HoverToolTip.cs" t="Include" />
+            <e p="InformationSelection.cs" t="Include" />
+            <e p="InformationSelectItem.cs" t="Include" />
             <e p="JobPieceUI.cs" t="Include" />
             <e p="Participant.cs" t="Include" />
             <e p="Piece.cs" t="Include" />
